@@ -17,7 +17,7 @@ class HealthControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean HealthService health;
     @Test void publicHealthReturnsContract() throws Exception {
-        when(health.check()).thenReturn(new HealthService.HealthResponse("UP", "nexus-api", "0.4.0", "F4", "UP", "PEN", "America/Lima", Instant.parse("2026-10-22T10:00:00Z")));
+        when(health.check()).thenReturn(new HealthService.HealthResponse("UP", "nexus-api", "0.4.1", "F4", "UP", "PEN", "America/Lima", Instant.parse("2026-10-22T10:00:00Z")));
         mvc.perform(get("/api/v1/health")).andExpect(status().isOk()).andExpect(jsonPath("$.database").value("UP")).andExpect(jsonPath("$.currency").value("PEN"));
     }
     @Test void databaseFailureDoesNotLeakDetails() throws Exception {
@@ -29,5 +29,17 @@ class HealthControllerTest {
     }
     @Test void mutationsCannotUseHealthException() throws Exception {
         mvc.perform(post("/api/v1/health")).andExpect(status().isForbidden());
+    }
+    @Test void publicResourcesDoNotOpenOtherServerFiles() throws Exception {
+        // No frontend is bundled in this MVC slice; 404 proves assets pass security.
+        mvc.perform(get("/assets/missing.js")).andExpect(status().isNotFound());
+        mvc.perform(get("/.env")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/actuator/env")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/unknown")).andExpect(status().isUnauthorized());
+    }
+    @Test void publicAssetExceptionIsReadOnlyAndProtectedByCsp() throws Exception {
+        mvc.perform(post("/assets/missing.js")).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/health")).andExpect(header().string("Content-Security-Policy",
+            org.hamcrest.Matchers.containsString("frame-ancestors 'none'")));
     }
 }

@@ -4,6 +4,7 @@ if (!process.env.DB_NAME?.endsWith("_e2e"))
   throw new Error(
     "E2E requiere una base de datos aislada cuyo nombre termine en _e2e.",
   );
+const publicContainer = process.env.NEXUS_PUBLIC_E2E === "true";
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -12,13 +13,14 @@ export default defineConfig({
   timeout: 60000,
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:15173",
+    baseURL: publicContainer ? "https://127.0.0.1:15443" : "http://127.0.0.1:15173",
+    ignoreHTTPSErrors: publicContainer, // Self-signed certificate in isolated CI only.
     headless: true,
     trace: "off",
     screenshot: "off",
     video: "off",
   },
-  webServer: [
+  webServer: publicContainer ? [] : [
     {
       command: "node scripts/run-analytics.mjs",
       url: "http://127.0.0.1:18001/health",

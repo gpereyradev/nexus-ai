@@ -1,4 +1,4 @@
-# Roadmap y aceptación · 0.4.0
+# Roadmap y aceptación · 0.4.1
 
 Fuente: especificación maestra NEXUS AI v1.0. Primero F0–F3, Python desde F4.
 
@@ -45,6 +45,14 @@ Fuente: especificación maestra NEXUS AI v1.0. Primero F0–F3, Python desde F4.
   de Chromium no sustituye esas verificaciones.
 
 Evidencia ejecutada: [VALIDACION.md](VALIDACION.md).
+
+## Despliegue de portafolio
+
+- Imagen única y Blueprint gratuito preparados: [DESPLIEGUE.md](DESPLIEGUE.md).
+- Verificar la imagen construida, HTTPS, sesión Secure, roles y persistencia.
+- La publicación requiere cuentas conectadas de Render y Neon y un deploy
+  final exitoso. Registrar su URL solo después de comprobarla.
+- Mantener S/0: sin tarjetas, pruebas facturables ni ampliaciones automáticas.
 
 ## Criterios de F4
 

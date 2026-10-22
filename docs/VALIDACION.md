@@ -1,7 +1,19 @@
-# Validación · 0.4.0
+# Validación · 0.4.1
 
 Fecha: 22 de octubre de 2026. Se distingue ejecución en Linux/CI de arranque
 Windows o Compose local. No se activaron pagos, hosting ni APIs facturables.
+
+## Preparación de despliegue público
+
+Se añadieron imagen única, perfil `public`, Blueprint Render Free, configuración
+Neon, supervisor y guía. TypeScript, 10 pruebas web, build y 4 pruebas del
+lanzador aprobaron localmente. La ejecución local de pruebas Java sigue
+bloqueada al resolver dependencias de Surefire; no se presenta como aprobada.
+
+Pendiente registrar el run de CI de este cambio: prueba imagen real bajo 512 MiB,
+sesión HTTPS, flujo completo y memoria/OOM. El proveedor usa CPU fraccionada,
+distinta del límite de 1 CPU de CI. No se afirma rendimiento público certificado.
+La publicación se confirma solo con una URL y estado exitoso del proveedor.
 
 ## Evidencia de F4
 

@@ -22,7 +22,10 @@ public class SecurityConfig {
         // Same-origin sessions; Spring handles fixation protection and CSRF rotation.
         return http
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")))
             .authorizeHttpRequests(a -> a
+                .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/health", "/api/v1/auth/csrf").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/analytics/runs", "/api/v1/analytics/runs/*").hasAnyRole("ADMIN", "MANAGER", "ANALYST")
                 .requestMatchers(HttpMethod.POST, "/api/v1/analytics/forecast").hasAnyRole("ADMIN", "MANAGER", "ANALYST")

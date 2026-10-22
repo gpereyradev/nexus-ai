@@ -5,10 +5,14 @@
 - Stack: React + TypeScript, Java/Spring Boot y PostgreSQL. Python desde F4.
 - Presupuesto externo S/0. No activar pagos, pruebas facturables ni hosting
   que requiera tarjeta. No realizar acciones externas que no solicite el usuario.
-- Entrega actual: 0.4.0. F0 tiene integración Java/PostgreSQL aprobada en CI.
+- Entrega actual: 0.4.1. F0 tiene integración Java/PostgreSQL aprobada en CI.
 - F1 incorpora login/logout con sesión y CSRF, cuatro roles, catálogos y alta de usuarios.
 - F2/F3 incorporan stock por ledger, ventas atómicas, anulación única y reportes SQL.
 - F4: FastAPI, Ridge y referencia semanal; MAE temporal, anomalías, reposición y snapshots.
+- Despliegue: infra/public/Dockerfile + render.yaml (Free), PostgreSQL externo
+  Neon. Leer docs/DESPLIEGUE.md. No afirmar publicado sin deploy/URL verificados.
+- El perfil public conserva cookie Secure y PostgreSQL verify-full. El bypass
+  TLS de CI solo es para PostgreSQL aislado. No compartir secretos ni .env.
 - No hay chatbot, LLM ni servicios de IA comerciales; no presentar reglas estadísticas como aprendizaje automático.
 - Próximos pendientes: usuarios, exportaciones, carga y accesibilidad.
 - V1–V5 ya fueron aplicadas en CI: son inmutables. Para cambios de esquema agrega V6.

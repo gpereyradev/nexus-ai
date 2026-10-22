@@ -52,7 +52,7 @@ export async function request<T>(
     if (options.signal?.aborted) throw error;
     throw new ApiError(
       0,
-      "No se pudo conectar. Comprueba Java y PostgreSQL y vuelve a intentar.",
+      "No se pudo conectar con el servicio. Espera un momento y vuelve a intentar.",
     );
   }
   if (!response.ok) {
