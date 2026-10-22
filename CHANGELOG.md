@@ -11,6 +11,8 @@
 - Rutas estáticas GET explícitas, CSP y pruebas para conservar API y archivos
   internos cerrados. Interfaz pública sin instrucciones de terminal locales.
 - CI de la imagen real con HTTPS, 512 MiB y recorridos completos de navegador.
+- Barra lateral desplazable en pantallas bajas para mantener accesible el
+  cierre de sesión con todos los módulos visibles.
 - Guía de publicación, actualización y persistencia. Estado y evidencia exactos
   en docs/VALIDACION.md; no confundir configuración con publicación completada.
 
