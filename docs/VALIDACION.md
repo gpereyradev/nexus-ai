@@ -5,8 +5,8 @@ Windows o Compose local. No se activaron pagos, hosting ni APIs facturables.
 
 ## Evidencia de F2/F3
 
-[Run 39747149296](https://github.com/gpereyradev/nexus-ai/actions/runs/39747149296),
-commit `0dc933b`, aprobó los jobs web y API con PostgreSQL 17.11 real:
+[Run 39748889174](https://github.com/gpereyradev/nexus-ai/actions/runs/39748889174),
+commit `4c0729d`, aprobó web, API y E2E con PostgreSQL 17.11 real:
 
 | Suite | Pruebas aprobadas |
 |---|---:|
@@ -17,10 +17,13 @@ commit `0dc933b`, aprobó los jobs web y API con PostgreSQL 17.11 real:
 | OperationsIT | 16 |
 | DemoDatasetIT | 1 |
 | DashboardIT | 3 |
-| Total sin E2E | 55 |
+| Playwright: operación completa y lector móvil/API | 2 |
+| Total | 57 |
 
-La validación E2E del mismo workflow está en revisión; no se declara aprobada
-hasta comprobar sus logs. El estado de cada commit se consulta en
+Los logs confirman ambos casos E2E aprobados en 14.7 segundos (incluido el
+arranque de los servidores). No se interceptaron peticiones de API. Este run
+valida el código operativo; la actualización posterior de este documento solo
+registra su evidencia. El estado de cada commit se consulta en
 [Actions de la rama](https://github.com/gpereyradev/nexus-ai/actions?query=branch%3Afeat%2Ff2-inventory-sales).
 Un resultado de un commit anterior no sustituye la revisión posterior.
 
@@ -54,7 +57,7 @@ suites de integración aprobados. `git diff --check` sin errores. OpenAPI YAML
 analizado y referencias locales resueltas. Setup conserva las claves existentes;
 credenciales fuera de Git.
 
-Revisión visual con Chromium a 1440 px y 390 px: panel, inventario, formulario
+Revisión visual con Chromium a 1440, 1280, 768 y 390 px: panel, inventario, formulario
 de movimiento y venta. Sin errores JavaScript ni desbordamiento horizontal del
 documento. Esta revisión visual usó fixtures de API controlados, distinta de
 la suite E2E real de GitHub. Sus capturas son internas, no evidencia de BD real.
