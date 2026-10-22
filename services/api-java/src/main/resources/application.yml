@@ -36,3 +36,4 @@ server:
 nexus:
   demo:
     enabled: ${DEMO_ENABLED:false}
+    data-enabled: ${DEMO_DATA_ENABLED:false}

@@ -496,7 +496,7 @@ function Editor({
                 step: 1,
               })}
               <p className="form-hint">
-                El stock disponible y los movimientos se incorporan en F2.
+                Consulta las existencias y registra movimientos desde Inventario.
               </p>
             </>
           )}

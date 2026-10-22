@@ -13,3 +13,5 @@ Thumbs.db
 *.tsbuildinfo
 __pycache__/
 .venv/
+test-results/
+playwright-report/

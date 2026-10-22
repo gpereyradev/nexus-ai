@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 /** Opt-in bootstrap: existing credentials are never overwritten. */
-@Component @ConditionalOnProperty(name="nexus.demo.enabled",havingValue="true")
+@Component @org.springframework.core.annotation.Order(0) @ConditionalOnProperty(name="nexus.demo.enabled",havingValue="true")
 public class DemoAccounts implements ApplicationRunner {
     private final AccountService accounts;
     private final Environment environment;
