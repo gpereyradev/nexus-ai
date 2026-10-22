@@ -107,7 +107,8 @@ mvn -B -f services/api-java/pom.xml test
 ```
 
 La integración necesita **una base de pruebas independiente y vacía**; no la
-ejecutes sobre datos de trabajo. Ejemplo en Git Bash después de crear en
+ejecutes sobre datos de trabajo. OperationsIT exige el sufijo `_test` o `_ci`
+y limpia tablas de operación. Ejemplo en Git Bash después de crear en
 PostgreSQL un rol y base `nexus_test`:
 
 ```bash

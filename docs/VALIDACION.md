@@ -61,6 +61,9 @@ la suite E2E real de GitHub. Sus capturas son internas, no evidencia de BD real.
 
 ## Cómo repetir E2E
 
+OperationsIT también rechaza bases cuyo nombre no termine en `_test` o `_ci`
+antes de ejecutar las pruebas que limpian tablas.
+
 La configuración Playwright exige una BD aislada con nombre terminado en
 `_e2e`; crea registros. Arranca JAR y Vite en 18080/15173, sin reutilizar
 servidores existentes ni leer `.env`. Consulta [README](../README.md).

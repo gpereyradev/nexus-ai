@@ -194,7 +194,9 @@ export default function Sales({
             setCreating(false);
             setDetail(sale.id);
             setNotice(
-              "Venta confirmada. Las existencias ya están actualizadas.",
+              sale.status === "CONFIRMED"
+                ? "Venta confirmada. Las existencias ya están actualizadas."
+                : "Esta solicitud corresponde a una venta que ya fue anulada. Revisa su detalle.",
             );
             setRevision((x) => x + 1);
           }}

@@ -37,7 +37,7 @@ test("venta real: catálogo, ingreso, venta, reporte, anulación y trazabilidad"
     .fill("Producto recorrido completo");
   await editor.getByLabel("SKU", { exact: true }).fill(sku);
   await editor
-    .getByLabel("Categoría", { exact: true })
+    .getByLabel("Categoría")
     .selectOption("10000000-0000-0000-0000-000000000001");
   await editor.getByLabel("Costo (S/)", { exact: true }).fill("10.00");
   await editor.getByLabel("Precio (S/)", { exact: true }).fill("19.90");

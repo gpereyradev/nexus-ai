@@ -176,7 +176,7 @@ export default function App() {
               <p className="subtitle">
                 {view === "home"
                   ? `Bienvenido, ${account.displayName}.`
-                  : "Información persistida en PostgreSQL y permisos comprobados por la API."}
+                  : "Consulta y organiza tu operación desde un solo espacio."}
               </p>
             </div>
             <span className="version">v0.3.0</span>

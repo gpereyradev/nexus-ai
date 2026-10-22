@@ -362,9 +362,9 @@ export default function Dashboard({
               )}
             </section>
             <p className="form-hint">
-              Indicadores calculados desde PostgreSQL. La moneda es PEN y cada
-              día se delimita según America/Lima. Próxima fase: análisis y
-              pronósticos con Python.
+              Indicadores calculados desde las ventas confirmadas. La moneda es
+              PEN y cada día se delimita según America/Lima. Próxima fase:
+              análisis y pronósticos con Python.
             </p>
           </>
         )

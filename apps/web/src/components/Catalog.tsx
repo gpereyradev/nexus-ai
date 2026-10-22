@@ -119,7 +119,11 @@ export default function Catalog({
           </p>
         </div>
         {canEdit && (
-          <button className="action" onClick={() => setEditing(null)}>
+          <button
+            className="action"
+            disabled={loading}
+            onClick={() => setEditing(null)}
+          >
             + Nuevo {singular[kind]}
           </button>
         )}
@@ -496,7 +500,8 @@ function Editor({
                 step: 1,
               })}
               <p className="form-hint">
-                Consulta las existencias y registra movimientos desde Inventario.
+                Consulta las existencias y registra movimientos desde
+                Inventario.
               </p>
             </>
           )}

@@ -33,6 +33,9 @@ class OperationsIT {
     private UUID a,b;
     private static final String PASSWORD="operations_test_fixture_password_2026";
     @BeforeAll void users() {
+        String database=jdbc.queryForObject("SELECT current_database()",String.class);
+        if(database==null || !(database.endsWith("_test") || database.endsWith("_ci")))
+            throw new IllegalStateException("OperationsIT requiere una BD aislada terminada en _test o _ci; limpia las tablas de operación.");
         for(var role:AccountService.Role.values()) if(!accounts.exists(email(role)))
             accounts.create(new AccountService.NewAccount("Ops "+role,email(role),PASSWORD,role));
     }
