@@ -37,3 +37,8 @@ nexus:
   demo:
     enabled: ${DEMO_ENABLED:false}
     data-enabled: ${DEMO_DATA_ENABLED:false}
+  analytics:
+    enabled: ${ANALYTICS_ENABLED:false}
+    url: ${ANALYTICS_URL:http://127.0.0.1:8001}
+    key: ${ANALYTICS_API_KEY:}
+    timeout-ms: ${ANALYTICS_TIMEOUT_MS:8000}

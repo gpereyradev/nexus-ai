@@ -363,8 +363,7 @@ export default function Dashboard({
             </section>
             <p className="form-hint">
               Indicadores calculados desde las ventas confirmadas. La moneda es
-              PEN y cada día se delimita según America/Lima. Próxima fase:
-              análisis y pronósticos con Python.
+              PEN y cada día se delimita según America/Lima. Los pronósticos están disponibles en Análisis según tu rol.
             </p>
           </>
         )

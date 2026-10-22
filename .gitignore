@@ -15,3 +15,5 @@ __pycache__/
 .venv/
 test-results/
 playwright-report/
+.pytest_cache/
+*.pyc

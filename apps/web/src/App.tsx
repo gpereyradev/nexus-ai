@@ -6,6 +6,7 @@ import Users from "./components/Users";
 import Inventory from "./components/Inventory";
 import Sales from "./components/Sales";
 import Dashboard from "./components/Dashboard";
+import Analytics from "./components/Analytics";
 const roles = {
   ADMIN: "Administrador",
   MANAGER: "Gestor",
@@ -20,6 +21,7 @@ const titles: Record<string, string> = {
   users: "Usuarios",
   inventory: "Inventario",
   sales: "Ventas",
+  analytics: "Análisis y pronósticos",
 };
 export default function App() {
   const [account, setAccount] = useState<Account | null>(null);
@@ -29,7 +31,9 @@ export default function App() {
   const params = new URLSearchParams(query);
   const selected = params.get("view") || "home";
   const view =
-    titles[selected] && !(selected === "users" && account?.role !== "ADMIN")
+    titles[selected] &&
+    !(selected === "users" && account?.role !== "ADMIN") &&
+    !(selected === "analytics" && account?.role === "VIEWER")
       ? selected
       : "home";
   useEffect(() => {
@@ -110,6 +114,7 @@ export default function App() {
     ["home", "Panel", "◫"],
     ["sales", "Ventas", "↗"],
     ["inventory", "Inventario", "▥"],
+    ...(account.role !== "VIEWER" ? [["analytics", "Análisis", "◈"]] : []),
     ["products", "Productos", "▦"],
     ["customers", "Clientes", "◎"],
     ["categories", "Categorías", "▤"],
@@ -149,7 +154,7 @@ export default function App() {
             <br />
             Decisiones con base.
           </p>
-          <small>v0.3.0 · Inventario, ventas y reportes</small>
+          <small>v0.4.0 · Gestión y analítica local</small>
         </div>
         <button className="logout-button" onClick={() => void leave()}>
           Cerrar sesión ↗
@@ -171,7 +176,7 @@ export default function App() {
         <main id="main">
           <div className="page-heading">
             <div>
-              <p className="eyebrow">GESTIÓN EMPRESARIAL / FASES 01–03</p>
+              <p className="eyebrow">GESTIÓN EMPRESARIAL / FASES 01–04</p>
               <h1>{titles[view]}</h1>
               <p className="subtitle">
                 {view === "home"
@@ -179,7 +184,7 @@ export default function App() {
                   : "Consulta y organiza tu operación desde un solo espacio."}
               </p>
             </div>
-            <span className="version">v0.3.0</span>
+            <span className="version">v0.4.0</span>
           </div>
           {notice && (
             <p className="connection-message" role="status">
@@ -192,6 +197,8 @@ export default function App() {
                 change({ view: id, ...filters }, true)
               }
             />
+          ) : view === "analytics" ? (
+            <Analytics />
           ) : view === "inventory" ? (
             <Inventory canEdit={canEdit} params={params} onParams={change} />
           ) : view === "sales" ? (
@@ -344,7 +351,7 @@ function Login({
           </button>
           {environment && <Environment />}
           <p className="login-footnote">
-            v0.3.0 · Entorno local · Datos ficticios
+            v0.4.0 · Entorno local · Datos ficticios
           </p>
         </div>
       </main>

@@ -20,11 +20,24 @@ export default defineConfig({
   },
   webServer: [
     {
+      command: "node scripts/run-analytics.mjs",
+      url: "http://127.0.0.1:18001/health",
+      timeout: 60000,
+      reuseExistingServer: false,
+      env: {
+        ANALYTICS_PORT: "18001",
+        ANALYTICS_API_KEY: "e2e_fixture_internal_analytics_key_2026",
+      },
+    },
+    {
       command: "java -jar services/api-java/target/nexus-api.jar",
       url: "http://127.0.0.1:18080/api/v1/health",
       timeout: 120000,
       reuseExistingServer: false,
       env: {
+        ANALYTICS_ENABLED: "true",
+        ANALYTICS_URL: "http://127.0.0.1:18001",
+        ANALYTICS_API_KEY: "e2e_fixture_internal_analytics_key_2026",
         API_PORT: "18080",
         API_BIND_ADDRESS: "127.0.0.1",
         SESSION_COOKIE_SECURE: "false",

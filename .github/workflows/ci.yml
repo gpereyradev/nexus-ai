@@ -44,8 +44,23 @@ jobs:
           java-version: "17"
           cache: maven
       - run: mvn -B -f services/api-java/pom.xml verify -Pintegration
+  analytics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/analytics-python/requirements.txt
+      - run: python -m pip install -r services/analytics-python/requirements.txt
+      - run: python -m pytest -q services/analytics-python/tests
+        env:
+          OPENBLAS_NUM_THREADS: "1"
+          OMP_NUM_THREADS: "1"
   e2e:
-    needs: [web, api]
+    needs: [web, api, analytics]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -77,6 +92,12 @@ jobs:
           java-version: "17"
           cache: maven
       - run: npm ci --no-audit --no-fund
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/analytics-python/requirements.txt
+      - run: python -m pip install -r services/analytics-python/requirements.txt
       - run: npx playwright install --with-deps chromium
       - run: mvn -B -f services/api-java/pom.xml package -DskipTests
       - run: npm run test:e2e

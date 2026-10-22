@@ -11,9 +11,10 @@ for (const line of template.split("\n")) {
   if (!match) continue;
   const [, key, initial] = match;
   if (new RegExp(`^${key}=`, "m").test(content)) continue;
-  const value = key.endsWith("PASSWORD")
-    ? randomBytes(24).toString("hex")
-    : initial;
+  const value =
+    key.endsWith("PASSWORD") || key === "ANALYTICS_API_KEY"
+      ? randomBytes(24).toString("hex")
+      : initial;
   content += `${content.endsWith("\n") || !content ? "" : "\n"}${key}=${value}\n`;
 }
 if (!exists || content !== readFileSync(destination, "utf8")) {

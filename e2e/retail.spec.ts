@@ -141,8 +141,70 @@ test("lector: reportes y navegación móvil con escrituras denegadas en la API",
     data: { items: [], requestKey: crypto.randomUUID() },
   });
   expect(response.status()).toBe(403);
+  await expect(
+    page
+      .getByRole("navigation")
+      .getByRole("button", { name: "Análisis", exact: true }),
+  ).toHaveCount(0);
+  const analysis = await page.request.post("/api/v1/analytics/forecast", {
+    headers: { [token.headerName]: token.token },
+    data: { from: "2026-07-01", to: "2026-10-21", forecastHorizonDays: 7 },
+  });
+  expect(analysis.status()).toBe(403);
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await expect(
     page.getByRole("button", { name: "Ingresar al espacio" }),
   ).toBeVisible();
+});
+
+test("análisis real de Python: pronóstico evaluado y estado de historial insuficiente", async ({
+  page,
+}) => {
+  await login(page);
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "Análisis", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Usar fechas demo" }).click();
+  const pending = page.waitForResponse(
+    (r) =>
+      r.url().endsWith("/api/v1/analytics/forecast") &&
+      r.request().method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Generar análisis", exact: true })
+    .click();
+  const response = await pending;
+  expect(response.status()).toBe(200);
+  const result = await response.json();
+  await expect(page.getByTestId("forecast-total")).toBeVisible();
+  expect(result.predictions).toHaveLength(7);
+  expect(result.evaluation.sampleSize).toBe(14);
+  expect(result.trainingPeriod.days).toBe(113);
+  expect(["seasonal_naive_v1", "ridge_calendar_v1"]).toContain(result.method);
+  expect(Number(result.evaluation.mae)).toBeGreaterThanOrEqual(0);
+  const summary = await page.request.get(
+    "/api/v1/dashboard/summary?from=2026-07-01&to=2026-10-21",
+  );
+  expect(Number(result.summary.total)).toBe(
+    Number((await summary.json()).salesTotal),
+  );
+  await page.getByLabel("Horizonte", { exact: true }).selectOption("14");
+  await page
+    .getByRole("button", { name: "Generar análisis", exact: true })
+    .click();
+  await expect(
+    page.getByText("Estimación · 14 días", { exact: true }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+  await page.getByLabel("Desde", { exact: true }).fill("2020-01-01");
+  await page.getByLabel("Hasta", { exact: true }).fill("2020-04-30");
+  await page
+    .getByRole("button", { name: "Generar análisis", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Historial insuficiente", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByTestId("forecast-total")).toHaveCount(0);
 });

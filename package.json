@@ -1,6 +1,6 @@
 {
   "name": "nexus-ai",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "workspaces": [
     "apps/web"
@@ -16,7 +16,8 @@
     "typecheck": "npm run typecheck --workspace @nexus/web",
     "test": "npm run test --workspace @nexus/web",
     "api": "node --env-file=.env scripts/run-api.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "analytics": "node --env-file=.env scripts/run-analytics.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1"

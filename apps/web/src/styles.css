@@ -1546,3 +1546,95 @@ textarea:focus {
     padding: 18px;
   }
 }
+.analytics-filters fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: end;
+  width: 100%;
+  min-width: 0;
+}
+.analytics-filters label {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+.analytics-filters input,
+.analytics-filters select {
+  width: 100%;
+}
+.analytics > .panel,
+.analytics > .dashboard-grid {
+  margin: 24px 0;
+}
+.analytics-intro {
+  margin-top: 28px;
+}
+.analytics-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-top: 30px;
+}
+.analytics-steps b {
+  font-size: 1.5rem;
+  color: #66a88d;
+}
+.analytics-steps h3 {
+  font-size: 1rem;
+}
+.analytics-steps p {
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: #64766c;
+}
+.evaluation-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin: 25px 0;
+}
+.evaluation-list dt {
+  color: #6a7e73;
+}
+.evaluation-list dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+}
+.analytics-warnings {
+  font-size: 0.85rem;
+  color: #5f7367;
+  line-height: 1.9;
+  padding-left: 20px;
+}
+.analytics-warnings li {
+  margin: 14px 0;
+}
+.prediction-row {
+  background: #f0f5ff;
+}
+.analytics .panel h2 {
+  font-size: 1.15rem;
+}
+@media (max-width: 768px) {
+  .analytics-steps {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .evaluation-list {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .evaluation-list dd {
+    text-align: left;
+    margin-bottom: 12px;
+  }
+  .analytics-filters button {
+    flex: 1 1 160px;
+  }
+}
