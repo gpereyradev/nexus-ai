@@ -3,17 +3,17 @@
 Plataforma de gestión empresarial con inteligencia artificial aplicada.
 Proyecto de portafolio de **Guillermo Pereyra · Ingeniería de Software con IA**.
 
-**Entrega 0.2.0: seguridad y catálogos.** Incluye login/logout real con sesiones,
-cuatro roles, productos, categorías, clientes y alta de usuarios por administrador.
-Los catálogos persisten en PostgreSQL y aplican permisos en la API. No hay ventas,
-inventario disponible, dashboard de indicadores ni IA todavía.
+**Entrega 0.3.0: inventario, ventas y reportes.** Incluye acceso por roles,
+catálogos persistidos, ingresos y ajustes de stock, ventas atómicas y anulación
+con devolución única. El panel calcula indicadores desde PostgreSQL y permite
+filtrar por fechas de Lima. La IA se implementará en F4.
 
-F0 quedó validada en GitHub Actions con PostgreSQL real. Los resultados y límites
-actuales están en [docs/VALIDACION.md](docs/VALIDACION.md). La especificación original
-se conserva en [docs/NEXUS_AI_Especificacion_Maestra.pdf](docs/NEXUS_AI_Especificacion_Maestra.pdf).
+La evidencia y sus límites están en [docs/VALIDACION.md](docs/VALIDACION.md).
+La especificación original se conserva en
+[docs/NEXUS_AI_Especificacion_Maestra.pdf](docs/NEXUS_AI_Especificacion_Maestra.pdf).
 
-**Si vienes de v0.1.0:** sigue [docs/ACTUALIZAR.md](docs/ACTUALIZAR.md) para conservar
-la base y las variables existentes. La nueva migración V3 se aplica automáticamente.
+**Si ya tienes el proyecto:** sigue [docs/ACTUALIZAR.md](docs/ACTUALIZAR.md).
+No hace falta otro ZIP ni recrear la base. V4 conserva los catálogos existentes.
 
 ## Empezar por el frontend
 
@@ -107,7 +107,8 @@ mvn -B -f services/api-java/pom.xml test
 ```
 
 La integración necesita **una base de pruebas independiente y vacía**; no la
-ejecutes sobre datos de trabajo. Ejemplo en Git Bash después de crear en
+ejecutes sobre datos de trabajo. OperationsIT exige el sufijo `_test` o `_ci`
+y limpia tablas de operación. Ejemplo en Git Bash después de crear en
 PostgreSQL un rol y base `nexus_test`:
 
 ```bash
@@ -142,7 +143,7 @@ cuando el MVP esté estable. No hay despliegue ni integración de servicios pago
 
 El contrato se documenta en [docs/API.md](docs/API.md) y
 [docs/openapi.yaml](docs/openapi.yaml). Los listados de productos y clientes
-usarán búsqueda, filtros, orden y páginas con un máximo de 100 filas.
+usan búsqueda, filtros, orden y páginas con un máximo de 100 filas.
 La edición de catálogos requiere la versión leída: un cambio obsoleto recibe 409.
 
 ## Primer push y siguientes versiones
@@ -162,10 +163,10 @@ npm run accounts
 
 | Cuenta | Permisos |
 |---|---|
-| `admin@nexus.demo` | Catálogos, consulta y creación de usuarios |
-| `manager@nexus.demo` | Crear, editar y desactivar catálogos |
-| `analyst@nexus.demo` | Consultar catálogos, sin edición |
-| `viewer@nexus.demo` | Consultar catálogos, sin edición |
+| `admin@nexus.demo` | Catálogos, movimientos, ventas, anulaciones, reportes y alta de usuarios |
+| `manager@nexus.demo` | Catálogos, movimientos y ventas; consulta de reportes |
+| `analyst@nexus.demo` | Consultar catálogos, inventario, ventas y reportes |
+| `viewer@nexus.demo` | Consultar catálogos, inventario, ventas y reportes |
 
 No existe una contraseña pública fija. El comando lee tu `.env`; los valores
 solo se usan al crear cuentas que todavía no existen. Modificar después una
@@ -177,11 +178,57 @@ El administrador también puede crear cuentas desde Usuarios. La edición de
 roles, desactivación de usuarios y reinicio de contraseñas aún están pendientes;
 no se ofrecen botones que aparenten ejecutar esas operaciones.
 
+## Probar la operación
+
+1. Entra como administrador y abre el Panel. «Ver período demo» muestra los
+   datos ficticios de julio a octubre de 2026; el período inicial son los últimos 30 días.
+2. En Inventario, busca un producto y abre Historial. Usa Movimiento para
+   ingresar unidades o registrar una diferencia de conteo con motivo obligatorio.
+3. En Ventas, agrega productos disponibles y cantidades. El servidor toma los
+   precios del catálogo, comprueba stock y confirma todo en una transacción.
+4. Abre el detalle para consultar las líneas y precios históricos. Solo ADMIN
+   puede anular con motivo: recupera las unidades una sola vez y conserva el historial.
+5. Actualiza el Panel. Las ventas anuladas se excluyen de los importes; el
+   stock bajo representa existencias actuales, independiente del período elegido.
+
+No hay cobros, impuestos, descuentos, importación real ni emisión tributaria.
+
+## Datos ficticios opcionales
+
+`npm run setup` añade `DEMO_DATA_ENABLED=true` si falta. En el siguiente arranque,
+Java crea una sola vez 30 productos `DEMO-001`…`DEMO-030`, 20 clientes ficticios,
+226 ventas entre 01/07/2026 y 21/10/2026 y movimientos de stock consistentes.
+Tres productos iniciales ejemplifican stock bajo. El panel identifica el dataset.
+
+Para empezar sin ellos, establece `DEMO_DATA_ENABLED=false` **antes** de arrancar
+Java. Requiere `DEMO_ENABLED=true` o una cuenta activa `admin@nexus.demo` ya creada.
+El seed es transaccional e idempotente: no duplica ni sobrescribe registros.
+Un SKU `DEMO-*` ya ocupado provoca rollback; deshabilita el seed para continuar.
+Deshabilitar la variable después no borra datos ya creados. No elimines tablas
+ni volúmenes para actualizar. Los registros demo pueden modificarse desde la
+aplicación con los mismos permisos y reglas que cualquier registro.
+
+## Pruebas de navegador
+
+CI ejecuta Playwright contra React, el JAR real y PostgreSQL en una BD separada.
+Para repetirlo localmente, crea un rol y BD exclusivos cuyo nombre termine en
+`_e2e`, exporta `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` y ejecuta:
+
+```bash
+mvn -B -f services/api-java/pom.xml package -DskipTests
+npx playwright install chromium
+npm run test:e2e
+```
+
+La suite crea datos, usa puertos 18080/15173 y rechaza nombres de BD que no
+terminen en `_e2e`. No reutiliza servidores existentes. Las contraseñas de fixtures
+son exclusivas de ese entorno efímero. No lee tu `.env` ni tus cuentas locales.
+No activa capturas, vídeos o trazas con credenciales.
+
 ## Próximo módulo
 
-**F2: inventario y ventas.** Movimientos trazables, control de concurrencia,
-ventas atómicas y anulación única. Consulta [docs/ROADMAP.md](docs/ROADMAP.md).
-No hay importación de datos reales, cobros ni emisión fiscal.
+**F4: análisis y pronósticos con Python.** Se abordará con baseline, evaluación
+MAE y tratamiento de fallos del servicio. Consulta [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Notas de seguridad y costo
 
@@ -194,7 +241,7 @@ No hay importación de datos reales, cobros ni emisión fiscal.
 - Límite local de 10 intentos de acceso por IP y minuto. No es un limitador
   distribuido; detrás de Vite todas las peticiones comparten la IP del proxy.
 - Migraciones versionadas, zona horaria de almacenamiento UTC; interfaz Lima,
-  moneda PEN. Los importes usarán DECIMAL cuando se implemente operación.
+  moneda PEN. Los importes se guardan en DECIMAL(12,2) y se calculan con BigDecimal.
 - No se activaron cargos, hosting, suscripciones ni APIs facturables.
 - CI no publica el proyecto. Revisa la disponibilidad y cuota de Actions de
   tu cuenta antes de usarlo en un repositorio privado.

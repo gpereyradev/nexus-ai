@@ -1,5 +1,22 @@
 # Cambios
 
+## 0.3.0 · 22/10/2026
+
+- Inventario paginado con búsqueda, categorías, activos y alertas de stock bajo.
+- Historial inmutable de ingresos, ajustes, ventas y reversiones con autor,
+  motivo, fecha y saldos anterior/posterior; saldo validado también en PostgreSQL.
+- Ventas con precios/costos históricos del servidor, total decimal exacto,
+  validación de disponibilidad y rollback de toda la operación si una línea falla.
+- Bloqueos ordenados para operaciones simultáneas, claves idempotentes y
+  anulación ADMIN que devuelve unidades una sola vez.
+- Panel desde consultas SQL: ventas, ticket promedio, unidades, evolución diaria,
+  categorías, top 5 y stock bajo actual; filtros de fecha en horario de Lima.
+- Dataset ficticio opcional e idempotente: 30 productos, 20 clientes, 226 ventas
+  y 485 movimientos iniciales. No reemplaza los catálogos del usuario.
+- Migración V4, suite de concurrencia y pruebas de reportes/seed en PostgreSQL.
+- Pruebas Playwright contra React, API y BD reales en CI aislada; revisión móvil.
+- JAR estable `target/nexus-api.jar` y guía de actualización sin recrear la BD.
+
 ## 0.2.0 · 22/10/2026
 
 - Login/logout mediante sesiones de servidor: cookie HttpOnly/SameSite,

@@ -1,4 +1,4 @@
-name: Verify foundation
+name: Verify NEXUS
 on: [push, pull_request]
 permissions:
   contents: read
@@ -44,3 +44,39 @@ jobs:
           java-version: "17"
           cache: maven
       - run: mvn -B -f services/api-java/pom.xml verify -Pintegration
+  e2e:
+    needs: [web, api]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: nexus_e2e
+          POSTGRES_USER: nexus_e2e
+          POSTGRES_PASSWORD: e2e_ephemeral_not_a_real_secret
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U nexus_e2e -d nexus_e2e"
+          --health-interval 5s --health-timeout 3s --health-retries 15
+    env:
+      DB_NAME: nexus_e2e
+      DB_USER: nexus_e2e
+      DB_PASSWORD: e2e_ephemeral_not_a_real_secret
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: mvn -B -f services/api-java/pom.xml package -DskipTests
+      - run: npm run test:e2e

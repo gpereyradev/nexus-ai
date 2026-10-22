@@ -4,8 +4,8 @@ afterEach(() => vi.unstubAllGlobals());
 const healthy = {
   status: "UP",
   application: "nexus-api",
-  version: "0.2.0",
-  phase: "F1",
+  version: "0.3.0",
+  phase: "F3",
   database: "UP",
   currency: "PEN",
   timezone: "America/Lima",
@@ -41,6 +41,6 @@ describe("Contrato de conectividad", () => {
       "fetch",
       vi.fn().mockResolvedValue(new Response(JSON.stringify(payload))),
     );
-    await expect(fetchHealth()).rejects.toThrow("contrato F1");
+    await expect(fetchHealth()).rejects.toThrow("contrato F3");
   });
 });

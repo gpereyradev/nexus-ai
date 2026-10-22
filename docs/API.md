@@ -1,4 +1,4 @@
-# API · 0.2.0
+# API · 0.3.0
 
 Contrato completo: [openapi.yaml](openapi.yaml), OpenAPI 3.1.
 Base `/api/v1`. JSON salvo el formulario de login. No hay CORS global ni JWT.
@@ -101,6 +101,61 @@ hashes ni stacktrace. Los rechazos del filtro de seguridad no incluyen fields.
 | 429 | Límite de intentos de acceso |
 | 503 | PostgreSQL dejó de estar disponible tras arrancar Java, en health |
 
-Health informa versión 0.2.0, phase F1, moneda PEN, timezone America/Lima y
+Health informa versión 0.3.0, phase F3, moneda PEN, timezone America/Lima y
 checkedAt en UTC. Siempre consulta SELECT 1. Si PostgreSQL no está accesible
 al arrancar, Flyway impide el inicio y el frontend informa error de conexión.
+
+## Inventario, ventas y reportes
+
+| Método / ruta | Uso | Permiso |
+|---|---|---|
+| GET /inventory | Saldo por producto; q, active, category UUID, lowOnly, page, size | Todos los roles |
+| GET /inventory/movements | Historial; productId, type, from, to, page, size | Todos los roles |
+| POST /inventory/adjustments | Ingreso o ajuste firmado | ADMIN / MANAGER |
+| GET /sales | Listado; q (código/cliente), status, customer UUID, from, to, page, size | Todos los roles |
+| POST /sales | Confirmar venta atómica | ADMIN / MANAGER |
+| GET /sales/{id} | Líneas y precios históricos | Todos los roles |
+| POST /sales/{id}/cancel | Anulación con devolución única | ADMIN |
+| GET /dashboard/summary | Indicadores; from/to inclusivos Lima | Todos los roles |
+
+Listados: página desde 0, máximo 100 filas, orden estable. Fechas ISO YYYY-MM-DD.
+Dashboard: por defecto últimos 30 días, rango máximo 366 días. Las anuladas se
+excluyen del reporte. Los importes son cadenas decimales; la moneda es PEN.
+`lowStockCount`/`lowStock` representan productos activos actuales, sin fecha de corte.
+`demoData` indica la presencia del dataset ficticio. No existe endpoint público de seed.
+
+Ingreso/ajuste (POST con CSRF):
+
+```json
+{"productId":"UUID","type":"ENTRY","quantity":5,"reason":"Reposición","requestKey":"UUID"}
+```
+
+ENTRY requiere cantidad positiva; ADJUSTMENT acepta signo positivo/negativo.
+La cantidad es entera, distinta de cero, entre -1000000 y 1000000. El saldo
+nunca es negativo; el motivo es obligatorio y admite hasta 250 caracteres.
+
+Venta:
+
+```json
+{"customerId":null,"items":[{"productId":"UUID","quantity":2}],"requestKey":"UUID"}
+```
+
+Entre 1 y 100 productos distintos, cantidades de 1 a 1000000. El cliente es
+opcional; si se incluye debe estar activo. El servidor determina precios,
+costos, autor y fecha, y revierte la transacción entera ante stock insuficiente.
+Los campos de precio enviados por un consumidor no sustituyen al catálogo.
+
+Ambas creaciones responden 201 inicialmente y 200 al repetir la misma clave
+con idéntico contenido por el mismo usuario. Una clave reutilizada con otros
+datos recibe 409 `IDEMPOTENCY_CONFLICT`. La aplicación no reintenta escrituras
+por sí sola. Conserva la clave ante errores de red sin cambiar el formulario.
+
+Anulación: `{"reason":"Devolución por error de registro"}`. Siempre responde
+200 con el detalle resultante, incluso si ya estaba anulada. No añade una
+segunda devolución ni reemplaza el primer motivo. No hay PATCH/DELETE de
+ventas, líneas o movimientos. Se puede anular aunque el producto esté inactivo.
+
+Errores: 400 datos/fechas inválidos, 401 sesión ausente, 403 rol/CSRF,
+404 registro ausente, 409 stock/conflicto/idempotencia/operación ocupada.
+Durante la carga inicial opcional del dataset health responde 503 `INITIALIZING`.
+Los importes se limitan a 9999999999.99; el saldo al entero positivo de 32 bits.

@@ -24,7 +24,11 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(a -> a
                 .requestMatchers(HttpMethod.GET, "/api/v1/health", "/api/v1/auth/csrf").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/summary").authenticated()
                 .requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/sales/*/cancel").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/v1/inventory", "/api/v1/inventory/movements", "/api/v1/sales", "/api/v1/sales/*").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/inventory/adjustments", "/api/v1/sales").hasAnyRole("ADMIN", "MANAGER")
                 .requestMatchers(HttpMethod.GET, "/api/v1/me", "/api/v1/products", "/api/v1/products/*", "/api/v1/categories", "/api/v1/customers", "/api/v1/customers/*").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/products", "/api/v1/categories", "/api/v1/customers").hasAnyRole("ADMIN", "MANAGER")
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/products/*", "/api/v1/categories/*", "/api/v1/customers/*").hasAnyRole("ADMIN", "MANAGER")

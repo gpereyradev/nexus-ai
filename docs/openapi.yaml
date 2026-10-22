@@ -1,8 +1,9 @@
 openapi: 3.1.0
 info:
   title: NEXUS AI API
-  version: 0.2.0
-  description: Demostración local de sesiones y catálogos. Sin ventas ni IA implementadas.
+  version: 0.3.0
+  description: Demostración local de sesiones, catálogos, inventario, ventas atómicas y reportes. IA pendiente de
+    F4.
 servers:
 - url: /api/v1
 security:
@@ -491,6 +492,264 @@ paths:
       - *id001
       x-roles:
       - ADMIN
+  /inventory:
+    get:
+      summary: Existencias calculadas desde el historial
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 160
+      - name: active
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: category
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: lowOnly
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - &id005
+        name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          default: 0
+      - &id006
+        name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryPage'
+        default: &id007
+          description: Solicitud rechazada; 400 validación, 401 sesión, 403 rol/CSRF, 404 registro, 409 conflicto.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /inventory/movements:
+    get:
+      summary: Historial inmutable; fechas inclusivas de Lima
+      parameters:
+      - name: productId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - ENTRY
+          - ADJUSTMENT
+          - SALE
+          - REVERSAL
+      - &id008
+        name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - &id009
+        name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - *id005
+      - *id006
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementPage'
+        default: *id007
+  /inventory/adjustments:
+    post:
+      summary: Registrar ingreso o ajuste con clave idempotente
+      parameters:
+      - &id010
+        name: X-CSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Token obtenido de GET /auth/csrf; renovar después de login/logout.
+      x-roles:
+      - ADMIN
+      - MANAGER
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdjustmentInput'
+      responses:
+        '200':
+          description: Resultado previo idempotente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movement'
+        default: *id007
+        '201':
+          description: Creado; repetir usuario/clave con los mismos datos devuelve 200. Otro contenido recibe 409.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movement'
+  /sales:
+    get:
+      summary: Ventas por código/cliente; fechas inclusivas de Lima
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 160
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - CONFIRMED
+          - CANCELLED
+      - name: customer
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - *id008
+      - *id009
+      - *id005
+      - *id006
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleSummaryPage'
+        default: *id007
+    post:
+      summary: Confirmar venta atómica con clave idempotente
+      parameters:
+      - *id010
+      x-roles:
+      - ADMIN
+      - MANAGER
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaleInput'
+      responses:
+        '200':
+          description: Resultado previo idempotente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleDetail'
+        default: *id007
+        '201':
+          description: Creado; repetir usuario/clave con los mismos datos devuelve 200. Otro contenido recibe 409.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleDetail'
+  /sales/{id}:
+    get:
+      summary: Detalle persistido con precios históricos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleDetail'
+        default: *id007
+  /sales/{id}/cancel:
+    post:
+      summary: Anular una sola vez y devolver existencias
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - *id010
+      x-roles:
+      - ADMIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancellationInput'
+      responses:
+        '200':
+          description: Venta anulada o ya anulada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleDetail'
+        default: *id007
+  /dashboard/summary:
+    get:
+      summary: Reporte consistente; últimos 30 días por defecto, máximo 366; stock bajo actual
+      parameters:
+      - *id008
+      - *id009
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        default: *id007
 components:
   securitySchemes:
     sessionCookie:
@@ -593,9 +852,9 @@ components:
         application:
           const: nexus-api
         version:
-          const: 0.2.0
+          const: 0.3.0
         phase:
-          const: F1
+          const: F3
         database:
           const: UP
         currency:
@@ -617,26 +876,26 @@ components:
     ProductInput:
       type: object
       properties:
-        name: &id005
+        name: &id011
           type: string
           minLength: 1
           maxLength: 160
         active: *id004
-        version: &id006
+        version: &id012
           type: integer
           minimum: 0
           format: int64
-        sku: &id007
+        sku: &id013
           type: string
           minLength: 1
           maxLength: 40
           pattern: ^[A-Za-z0-9_-]+$
         categoryId: *id002
-        cost: &id008
+        cost: &id014
           $ref: '#/components/schemas/Money'
-        price: &id009
+        price: &id015
           $ref: '#/components/schemas/Money'
-        minStock: &id010
+        minStock: &id016
           type: integer
           minimum: 0
           maximum: 2147483647
@@ -656,14 +915,14 @@ components:
     Product:
       type: object
       properties:
-        name: *id005
+        name: *id011
         active: *id004
-        version: *id006
-        sku: *id007
+        version: *id012
+        sku: *id013
         categoryId: *id002
-        cost: *id008
-        price: *id009
-        minStock: *id010
+        cost: *id014
+        price: *id015
+        minStock: *id016
         id: *id002
         categoryName:
           type: string
@@ -706,9 +965,9 @@ components:
     CustomerInput:
       type: object
       properties:
-        name: *id005
+        name: *id011
         active: *id004
-        version: *id006
+        version: *id012
         email:
           anyOf:
           - type: 'null'
@@ -717,7 +976,7 @@ components:
           - type: string
             format: email
             maxLength: 254
-        phone: &id011
+        phone: &id017
           type:
           - string
           - 'null'
@@ -734,16 +993,16 @@ components:
     Customer:
       type: object
       properties:
-        name: *id005
+        name: *id011
         active: *id004
-        version: *id006
+        version: *id012
         email:
           type:
           - string
           - 'null'
           format: email
           maxLength: 254
-        phone: *id011
+        phone: *id017
         id: *id002
       required:
       - name
@@ -780,12 +1039,12 @@ components:
     CategoryInput:
       type: object
       properties:
-        name: &id012
+        name: &id018
           type: string
           minLength: 1
           maxLength: 100
         active: *id004
-        version: *id006
+        version: *id012
       required:
       - name
       - active
@@ -797,12 +1056,385 @@ components:
     Category:
       type: object
       properties:
-        name: *id012
+        name: *id018
         active: *id004
-        version: *id006
+        version: *id012
         id: *id002
       required:
       - name
       - active
       - version
       - id
+    Inventory:
+      type: object
+      properties:
+        id: &id020
+          type: string
+          format: uuid
+        sku: &id019
+          type: string
+        name: *id019
+        categoryId: *id020
+        categoryName: *id019
+        price: &id025
+          type: string
+          pattern: ^\d+(\.\d{1,2})?$
+        minStock:
+          type: integer
+          minimum: 0
+        active: &id021
+          type: boolean
+        stock:
+          type: integer
+          minimum: 0
+        lowStock: *id021
+      required:
+      - id
+      - sku
+      - name
+      - categoryId
+      - categoryName
+      - price
+      - minStock
+      - active
+      - stock
+      - lowStock
+    Movement:
+      type: object
+      properties:
+        id: *id020
+        productId: *id020
+        sku: *id019
+        productName: *id019
+        type:
+          type: string
+          enum:
+          - ENTRY
+          - ADJUSTMENT
+          - SALE
+          - REVERSAL
+        quantity: &id022
+          type: integer
+        stockBefore: *id022
+        stockAfter: *id022
+        reason: *id019
+        saleId: &id023
+          type:
+          - string
+          - 'null'
+          format: uuid
+        saleCode: &id024
+          type:
+          - string
+          - 'null'
+        createdBy: *id020
+        actor: *id019
+        createdAt: &id026
+          type: string
+          format: date-time
+      required:
+      - id
+      - productId
+      - sku
+      - productName
+      - type
+      - quantity
+      - stockBefore
+      - stockAfter
+      - reason
+      - saleId
+      - saleCode
+      - createdBy
+      - actor
+      - createdAt
+    AdjustmentInput:
+      type: object
+      properties:
+        productId: *id020
+        type:
+          type: string
+          enum:
+          - ENTRY
+          - ADJUSTMENT
+        quantity:
+          type: integer
+          minimum: -1000000
+          maximum: 1000000
+          not:
+            const: 0
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 250
+        requestKey: *id020
+      required:
+      - productId
+      - type
+      - quantity
+      - reason
+      - requestKey
+      description: ENTRY exige cantidad positiva. El saldo posterior debe ser no negativo. La clave es única por
+        usuario.
+    SaleSummary:
+      type: object
+      properties:
+        id: *id020
+        code: *id019
+        customerId: *id023
+        customerName: *id024
+        total: *id025
+        status: &id027
+          type: string
+          enum:
+          - CONFIRMED
+          - CANCELLED
+        occurredAt: *id026
+        actor: *id019
+      required:
+      - id
+      - code
+      - customerId
+      - customerName
+      - total
+      - status
+      - occurredAt
+      - actor
+    SaleItem:
+      type: object
+      properties:
+        id: *id020
+        productId: *id020
+        sku: *id019
+        productName: *id019
+        categoryName: *id019
+        quantity: *id022
+        unitPrice: *id025
+        unitCost: *id025
+        subtotal: *id025
+      required:
+      - id
+      - productId
+      - sku
+      - productName
+      - categoryName
+      - quantity
+      - unitPrice
+      - unitCost
+      - subtotal
+    SaleDetail:
+      type: object
+      properties:
+        id: *id020
+        code: *id019
+        customerId: *id023
+        customerName: *id024
+        total: *id025
+        status: *id027
+        occurredAt: *id026
+        actor: *id019
+        currency:
+          type: string
+          const: PEN
+        cancelledAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        cancelledBy: *id024
+        cancellationReason: *id024
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleItem'
+      required:
+      - id
+      - code
+      - customerId
+      - customerName
+      - total
+      - status
+      - occurredAt
+      - actor
+      - currency
+      - cancelledAt
+      - cancelledBy
+      - cancellationReason
+      - items
+    SaleInput:
+      type: object
+      properties:
+        customerId: *id023
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            properties:
+              productId: *id020
+              quantity:
+                type: integer
+                minimum: 1
+                maximum: 1000000
+            required:
+            - productId
+            - quantity
+        requestKey: *id020
+      required:
+      - items
+      - requestKey
+      description: Productos distintos; precios, costos, total, fecha y autor determinados por el servidor.
+    CancellationInput:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 250
+      required:
+      - reason
+    InventoryPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inventory'
+        page: *id022
+        size: *id022
+        totalElements: *id022
+        totalPages: *id022
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    MovementPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movement'
+        page: *id022
+        size: *id022
+        totalElements: *id022
+        totalPages: *id022
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    SaleSummaryPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleSummary'
+        page: *id022
+        size: *id022
+        totalElements: *id022
+        totalPages: *id022
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    DashboardSummary:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        currency:
+          type: string
+          const: PEN
+        timezone:
+          type: string
+          const: America/Lima
+        salesTotal: *id025
+        orders: *id022
+        averageTicket: *id025
+        units: *id022
+        lowStockCount: *id022
+        daily:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              total: *id025
+              orders: *id022
+            required:
+            - date
+            - total
+            - orders
+        categories:
+          type: array
+          items:
+            type: object
+            properties:
+              name: *id019
+              total: *id025
+            required:
+            - name
+            - total
+        topProducts:
+          type: array
+          maxItems: 5
+          items:
+            type: object
+            properties:
+              id: *id020
+              sku: *id019
+              name: *id019
+              units: *id022
+              total: *id025
+            required:
+            - id
+            - sku
+            - name
+            - units
+            - total
+        lowStock:
+          type: array
+          maxItems: 5
+          items:
+            type: object
+            properties:
+              id: *id020
+              sku: *id019
+              name: *id019
+              stock: *id022
+              minStock: *id022
+            required:
+            - id
+            - sku
+            - name
+            - stock
+            - minStock
+        demoData: *id021
+      required:
+      - from
+      - to
+      - currency
+      - timezone
+      - salesTotal
+      - orders
+      - averageTicket
+      - units
+      - lowStockCount
+      - daily
+      - categories
+      - topProducts
+      - lowStock
+      - demoData

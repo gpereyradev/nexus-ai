@@ -3,6 +3,9 @@ import { login, logout, request, ApiError, type Account } from "./api/client";
 import { fetchHealth, type Health } from "./api/health";
 import Catalog, { type Kind } from "./components/Catalog";
 import Users from "./components/Users";
+import Inventory from "./components/Inventory";
+import Sales from "./components/Sales";
+import Dashboard from "./components/Dashboard";
 const roles = {
   ADMIN: "Administrador",
   MANAGER: "Gestor",
@@ -15,6 +18,8 @@ const titles: Record<string, string> = {
   customers: "Clientes",
   categories: "Categorías",
   users: "Usuarios",
+  inventory: "Inventario",
+  sales: "Ventas",
 };
 export default function App() {
   const [account, setAccount] = useState<Account | null>(null);
@@ -102,7 +107,9 @@ export default function App() {
     );
   const canEdit = account.role === "ADMIN" || account.role === "MANAGER";
   const nav = [
-    ["home", "Inicio", "◫"],
+    ["home", "Panel", "◫"],
+    ["sales", "Ventas", "↗"],
+    ["inventory", "Inventario", "▥"],
     ["products", "Productos", "▦"],
     ["customers", "Clientes", "◎"],
     ["categories", "Categorías", "▤"],
@@ -142,7 +149,7 @@ export default function App() {
             <br />
             Decisiones con base.
           </p>
-          <small>v0.2.0 · Seguridad y catálogos</small>
+          <small>v0.3.0 · Inventario, ventas y reportes</small>
         </div>
         <button className="logout-button" onClick={() => void leave()}>
           Cerrar sesión ↗
@@ -164,15 +171,15 @@ export default function App() {
         <main id="main">
           <div className="page-heading">
             <div>
-              <p className="eyebrow">GESTIÓN EMPRESARIAL / FASE 01</p>
+              <p className="eyebrow">GESTIÓN EMPRESARIAL / FASES 01–03</p>
               <h1>{titles[view]}</h1>
               <p className="subtitle">
                 {view === "home"
                   ? `Bienvenido, ${account.displayName}.`
-                  : "Información persistida en PostgreSQL y permisos comprobados por la API."}
+                  : "Consulta y organiza tu operación desde un solo espacio."}
               </p>
             </div>
-            <span className="version">v0.2.0</span>
+            <span className="version">v0.3.0</span>
           </div>
           {notice && (
             <p className="connection-message" role="status">
@@ -180,7 +187,20 @@ export default function App() {
             </p>
           )}
           {view === "home" ? (
-            <Home navigate={(id) => change({ view: id }, true)} />
+            <Dashboard
+              navigate={(id, filters = {}) =>
+                change({ view: id, ...filters }, true)
+              }
+            />
+          ) : view === "inventory" ? (
+            <Inventory canEdit={canEdit} params={params} onParams={change} />
+          ) : view === "sales" ? (
+            <Sales
+              canEdit={canEdit}
+              canCancel={account.role === "ADMIN"}
+              params={params}
+              onParams={change}
+            />
           ) : view === "users" ? (
             <Users />
           ) : (
@@ -249,7 +269,7 @@ function Login({
             Desde el primer día.
           </h1>
           <p>
-            Productos, categorías y clientes conectados en un solo espacio, con
+            Ventas, inventario y clientes conectados en un solo espacio, con
             acceso según tu rol.
           </p>
           <div className="login-tags">
@@ -324,68 +344,11 @@ function Login({
           </button>
           {environment && <Environment />}
           <p className="login-footnote">
-            v0.2.0 · Entorno local · Datos ficticios
+            v0.3.0 · Entorno local · Datos ficticios
           </p>
         </div>
       </main>
     </div>
-  );
-}
-function Home({ navigate }: { navigate: (id: string) => void }) {
-  return (
-    <>
-      <section className="hero">
-        <div className="hero-copy">
-          <span className="pill">F1 · SEGURIDAD Y CATÁLOGOS</span>
-          <h2>
-            Una base ordenada
-            <br />
-            para lo que viene.
-          </h2>
-          <p>
-            Empieza con tus productos y clientes. Cada cambio se valida y se
-            guarda en la base de datos.
-          </p>
-          <button className="action" onClick={() => navigate("products")}>
-            Explorar productos ↗
-          </button>
-        </div>
-        <div className="architecture">
-          <div>
-            <span>01</span> Usuarios y permisos <b>ACCESO</b>
-          </div>
-          <i aria-hidden="true">↓</i>
-          <div>
-            <span>02</span> Productos y categorías <b>CATÁLOGO</b>
-          </div>
-          <i aria-hidden="true">↓</i>
-          <div>
-            <span>03</span> Clientes <b>RELACIÓN</b>
-          </div>
-        </div>
-      </section>
-      <div className="bottom-grid">
-        <section className="panel">
-          <p className="eyebrow">CONEXIÓN DEL SISTEMA</p>
-          <h2>Estado del entorno</h2>
-          <Environment />
-        </section>
-        <section className="panel next-panel">
-          <p className="eyebrow">SIGUIENTE FASE</p>
-          <span className="phase-number">02</span>
-          <h2>Inventario y ventas</h2>
-          <p>
-            El próximo módulo incorporará movimientos trazables, ventas y
-            anulaciones. Aún no está implementado.
-          </p>
-          <ul>
-            <li>Control de existencias</li>
-            <li>Ventas en una transacción</li>
-            <li>Protección ante operaciones simultáneas</li>
-          </ul>
-        </section>
-      </div>
-    </>
   );
 }
 function Environment() {

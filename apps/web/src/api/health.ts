@@ -26,13 +26,13 @@ export async function fetchHealth(signal?: AbortSignal): Promise<Health> {
     v.database !== "UP" ||
     v.application !== "nexus-api" ||
     typeof v.version !== "string" ||
-    v.phase !== "F1" ||
+    v.phase !== "F3" ||
     v.currency !== "PEN" ||
     v.timezone !== "America/Lima" ||
     typeof v.checkedAt !== "string" ||
     Number.isNaN(Date.parse(v.checkedAt))
   ) {
-    throw new Error("La respuesta de salud no coincide con el contrato F1.");
+    throw new Error("La respuesta de salud no coincide con el contrato F3.");
   }
   return v as Health;
 }
