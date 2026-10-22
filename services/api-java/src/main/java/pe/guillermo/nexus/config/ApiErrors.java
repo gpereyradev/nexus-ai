@@ -10,6 +10,10 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.server.ResponseStatusException;
 @RestControllerAdvice
 public class ApiErrors {
+    @ExceptionHandler(pe.guillermo.nexus.operations.BusinessException.class)
+    ProblemDetail operation(pe.guillermo.nexus.operations.BusinessException e) { return problem(e.status,e.code,e.getMessage()); }
+    @ExceptionHandler(org.springframework.dao.PessimisticLockingFailureException.class)
+    ProblemDetail locked(Exception e) { return problem(HttpStatus.CONFLICT,"OPERATION_BUSY","Otro proceso está modificando estos registros. Vuelve a intentar la misma solicitud."); }
     private ProblemDetail problem(HttpStatusCode status,String code,String detail) {
         var p=ProblemDetail.forStatusAndDetail(status,detail);p.setTitle(code);p.setProperty("code",code);return p;
     }
