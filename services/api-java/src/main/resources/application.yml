@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: nexus-api
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_NAME:nexus}
+    username: ${DB_USER:nexus}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 5000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    clean-disabled: true
+server:
+  address: ${API_BIND_ADDRESS:127.0.0.1}
+  port: ${API_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never

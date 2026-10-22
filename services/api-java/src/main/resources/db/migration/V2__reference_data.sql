@@ -1,0 +1,15 @@
+-- Datos de referencia, sin cuentas ni contraseñas. Se ejecuta una sola vez por Flyway.
+INSERT INTO roles (id, code, description) VALUES
+('00000000-0000-0000-0000-000000000001', 'ADMIN', 'Administración completa'),
+('00000000-0000-0000-0000-000000000002', 'MANAGER', 'Gestión operativa'),
+('00000000-0000-0000-0000-000000000003', 'ANALYST', 'Análisis y reportes'),
+('00000000-0000-0000-0000-000000000004', 'VIEWER', 'Solo lectura');
+INSERT INTO categories (id, name) VALUES
+('10000000-0000-0000-0000-000000000001', 'Tecnología'),
+('10000000-0000-0000-0000-000000000002', 'Oficina'),
+('10000000-0000-0000-0000-000000000003', 'Hogar'),
+('10000000-0000-0000-0000-000000000004', 'Accesorios'),
+('10000000-0000-0000-0000-000000000005', 'Papelería'),
+('10000000-0000-0000-0000-000000000006', 'Limpieza'),
+('10000000-0000-0000-0000-000000000007', 'Deportes'),
+('10000000-0000-0000-0000-000000000008', 'Alimentos');
