@@ -1,34 +1,106 @@
-# Contrato implementado en 0.1.0
+# API · 0.2.0
 
-## GET /api/v1/health
+Contrato completo: [openapi.yaml](openapi.yaml), OpenAPI 3.1.
+Base `/api/v1`. JSON salvo el formulario de login. No hay CORS global ni JWT.
 
-Público, sin sesión. Ejecuta `SELECT 1` contra PostgreSQL. Respuesta 200:
+## Acceso de navegador
+
+1. GET `/auth/csrf` devuelve `token`, `headerName` y `parameterName`; puede crear
+   una sesión anónima. Conserva la cookie de sesión.
+2. POST `/auth/login`, Content-Type `application/x-www-form-urlencoded`, campos
+   `email` y `password`, más la cabecera CSRF devuelta. Un acceso correcto es
+   204; credenciales incorrectas reciben 401 genérico y no crean autenticación.
+3. GET `/me` devuelve identidad y rol. No devuelve hashes ni contraseñas.
+4. Solicita un nuevo CSRF tras autenticar: Spring invalida el anterior. Usa la
+   nueva cabecera en cada POST/PATCH. Un token ausente/obsoleto recibe 403.
+5. POST `/auth/logout` con CSRF invalida sesión y cookie; responde 204. La
+   cookie anterior no permite volver a entrar. No se ofrece logout por GET.
+
+Cookies: HttpOnly, SameSite=Strict; 30 minutos de inactividad. Para HTTPS se
+configura SESSION_COOKIE_SECURE=true. Límite local: 10 intentos/IP/minuto,
+429 con Retry-After: 60. El contador está en memoria y se reinicia con Java.
+
+## Rutas y permisos
+
+| Método / ruta | Uso | Permiso |
+|---|---|---|
+| GET /health | Estado real de Java/PostgreSQL | Público |
+| GET /auth/csrf | Obtener token CSRF | Público |
+| POST /auth/login | Iniciar sesión | Público con CSRF |
+| POST /auth/logout | Invalidar sesión | CSRF |
+| GET /me | Identidad actual | Autenticado |
+| GET /products | Listar/buscar productos | Cualquier rol |
+| GET /products/{id} | Detalle | Cualquier rol |
+| POST /products | Crear | ADMIN / MANAGER |
+| PATCH /products/{id} | Editar / desactivar | ADMIN / MANAGER |
+| GET /categories | Todas las categorías | Cualquier rol |
+| POST /categories | Crear | ADMIN / MANAGER |
+| PATCH /categories/{id} | Editar / desactivar | ADMIN / MANAGER |
+| GET /customers | Listar/buscar clientes | Cualquier rol |
+| GET /customers/{id} | Detalle | Cualquier rol |
+| POST /customers | Crear | ADMIN / MANAGER |
+| PATCH /customers/{id} | Editar / desactivar | ADMIN / MANAGER |
+| GET /users | Listar hasta 200 cuentas | ADMIN |
+| POST /users | Crear cuenta con rol | ADMIN |
+
+Las rutas restantes se deniegan por defecto. No hay DELETE físico, edición
+parcial de un solo campo ni operaciones de inventario/ventas todavía.
+PATCH recibe todos los campos editables y `version`: esto permite validar
+el formulario completo y detectar ediciones obsoletas.
+
+## Listados
+
+Productos y clientes aceptan `q`, `active`, `page` (desde 0), `size` (1–100),
+`sort` y `direction` (`asc`/`desc`). Productos además aceptan `category` (UUID).
+Orden de productos: name, sku, price, createdAt; clientes: name, createdAt.
+`q` busca nombre/SKU de producto o nombre/correo de cliente. Porcentaje y guion
+bajo se buscan literalmente. Un orden inválido recibe 400.
+
+Respuesta: `items`, `page`, `size`, `totalElements`, `totalPages`.
+Los filtros quedan en la URL de React y se recuperan con atrás/adelante.
+
+## Crear / editar producto
 
 ```json
 {
-  "status": "UP",
-  "application": "nexus-api",
-  "version": "0.1.0",
-  "phase": "F0",
-  "database": "UP",
-  "currency": "PEN",
-  "timezone": "America/Lima",
-  "checkedAt": "2026-10-22T10:00:00Z"
+  "sku": "DEMO-001",
+  "name": "Producto ficticio",
+  "categoryId": "10000000-0000-0000-0000-000000000001",
+  "cost": "10.00",
+  "price": "19.90",
+  "minStock": 2,
+  "active": true
 }
 ```
 
-`checkedAt` es una marca real UTC, convertida a Lima en el frontend. El ejemplo
-no implica que el backend haya arrancado en el entorno de preparación.
+El SKU se normaliza a mayúsculas y es único. Precios/costos son no negativos,
+con hasta diez cifras enteras y dos decimales. Stock mínimo es entero no
+negativo; no representa existencias disponibles. Para editar, agrega la
+`version` de la última lectura. Una respuesta correcta devuelve la nueva
+versión. Un 409 requiere recargar antes de volver a editar.
 
-Si pierde conexión después del arranque, devuelve 503, Content-Type
-`application/problem+json`, código `DATABASE_UNAVAILABLE`, sin host, usuario,
-contraseña, SQL ni stacktrace. Si PostgreSQL no está disponible al iniciar,
-Flyway impide el arranque completo; el navegador verá un error de conexión.
+Clientes: name, email opcional, phone opcional y active. Categorías: name y
+active; su nombre es único sin distinguir mayúsculas. No se pueden crear
+productos dentro de una categoría inactiva, pero se conservan las referencias
+ya existentes. Usuarios: displayName, email, password y role. Contraseñas de
+12 a 72 caracteres y máximo 72 bytes UTF-8; se almacenan con BCrypt.
 
-Las rutas operativas quedan bloqueadas: GET /api/v1/products sin credenciales
-devuelve 401. POST sin token CSRF devuelve 403. No hay endpoints de negocio
-ni login implementados. En F1 se añadirá OpenAPI para los contratos operativos.
+## Errores
 
-El frontend usa `/api/v1/health` relativo al mismo origen. Vite lo reenvía al
-valor `VITE_API_PROXY` de `.env`; solamente variables con prefijo `VITE_` pueden
-quedar expuestas al cliente. Nunca uses ese prefijo para secretos.
+Se usa application/problem+json. Incluye status, title, detail cuando procede,
+code y fields para validación de formularios. No incluye SQL, conexiones,
+hashes ni stacktrace. Los rechazos del filtro de seguridad no incluyen fields.
+
+| HTTP | Significado |
+|---|---|
+| 400 | Validación, formato, referencia inactiva u orden/página inválidos |
+| 401 | No autenticado o credenciales inválidas |
+| 403 | Rol sin permiso o CSRF ausente/obsoleto |
+| 404 | Registro no encontrado |
+| 409 | Duplicado, integridad o versión obsoleta |
+| 429 | Límite de intentos de acceso |
+| 503 | PostgreSQL dejó de estar disponible tras arrancar Java, en health |
+
+Health informa versión 0.2.0, phase F1, moneda PEN, timezone America/Lima y
+checkedAt en UTC. Siempre consulta SELECT 1. Si PostgreSQL no está accesible
+al arrancar, Flyway impide el inicio y el frontend informa error de conexión.

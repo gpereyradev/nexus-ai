@@ -1,0 +1,808 @@
+openapi: 3.1.0
+info:
+  title: NEXUS AI API
+  version: 0.2.0
+  description: Demostración local de sesiones y catálogos. Sin ventas ni IA implementadas.
+servers:
+- url: /api/v1
+security:
+- sessionCookie: []
+paths:
+  /health:
+    get:
+      summary: Salud real Java/PostgreSQL
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security: []
+  /auth/csrf:
+    get:
+      summary: Obtener CSRF para el navegador
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Csrf'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security: []
+  /me:
+    get:
+      summary: Identidad actual
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /auth/login:
+    post:
+      summary: Iniciar sesión; 10 intentos/IP/minuto
+      responses:
+        '204':
+          description: Correcto, sin cuerpo
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security: []
+      parameters:
+      - &id001
+        name: X-CSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Token obtenido de GET /auth/csrf; renovar después de login/logout.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                  writeOnly: true
+              required:
+              - email
+              - password
+  /auth/logout:
+    post:
+      summary: Invalidar sesión y cookie
+      responses:
+        '204':
+          description: Correcto, sin cuerpo
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      parameters:
+      - *id001
+      security: []
+  /products:
+    get:
+      summary: Listar products
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPage'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+          maxLength: 160
+      - name: active
+        in: query
+        schema: &id004
+          type: boolean
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - name
+          - sku
+          - price
+          - createdAt
+          default: name
+      - name: direction
+        in: query
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: asc
+      - name: category
+        in: query
+        schema: &id002
+          type: string
+          format: uuid
+    post:
+      summary: Crear Product
+      responses:
+        '201':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      parameters:
+      - *id001
+      x-roles:
+      - ADMIN
+      - MANAGER
+  /products/{id}:
+    patch:
+      summary: Editar o desactivar; todos los campos y versión son obligatorios
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductEdit'
+      parameters:
+      - &id003
+        name: id
+        in: path
+        required: true
+        schema: *id002
+      - *id001
+      x-roles:
+      - ADMIN
+      - MANAGER
+    get:
+      summary: Consultar Product
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      parameters:
+      - *id003
+  /customers:
+    get:
+      summary: Listar customers
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPage'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+          maxLength: 160
+      - name: active
+        in: query
+        schema: *id004
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - name
+          - createdAt
+          default: name
+      - name: direction
+        in: query
+        schema:
+          type: string
+          enum:
+          - asc
+          - desc
+          default: asc
+    post:
+      summary: Crear Customer
+      responses:
+        '201':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+      parameters:
+      - *id001
+      x-roles:
+      - ADMIN
+      - MANAGER
+  /customers/{id}:
+    patch:
+      summary: Editar o desactivar; todos los campos y versión son obligatorios
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerEdit'
+      parameters:
+      - *id003
+      - *id001
+      x-roles:
+      - ADMIN
+      - MANAGER
+    get:
+      summary: Consultar Customer
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      parameters:
+      - *id003
+  /categories:
+    get:
+      summary: Listar categories
+      responses:
+        '200':
+          description: Categorías ordenadas por nombre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    post:
+      summary: Crear Category
+      responses:
+        '201':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryInput'
+      parameters:
+      - *id001
+      x-roles:
+      - ADMIN
+      - MANAGER
+  /categories/{id}:
+    patch:
+      summary: Editar o desactivar; todos los campos y versión son obligatorios
+      responses:
+        '200':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryEdit'
+      parameters:
+      - *id003
+      - *id001
+      x-roles:
+      - ADMIN
+      - MANAGER
+  /users:
+    get:
+      summary: Listar hasta 200 cuentas sin hashes
+      responses:
+        '200':
+          description: Cuentas existentes
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 200
+                items:
+                  $ref: '#/components/schemas/Account'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      x-roles:
+      - ADMIN
+    post:
+      summary: Crear una cuenta
+      responses:
+        '201':
+          description: Correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        default:
+          description: Solicitud rechazada
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewAccount'
+      parameters:
+      - *id001
+      x-roles:
+      - ADMIN
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+  schemas:
+    Role:
+      type: string
+      enum:
+      - ADMIN
+      - MANAGER
+      - ANALYST
+      - VIEWER
+    Account:
+      type: object
+      properties:
+        id: *id002
+        displayName:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+        active: *id004
+      required:
+      - id
+      - displayName
+      - email
+      - role
+      - active
+    NewAccount:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          minLength: 12
+          maxLength: 72
+          writeOnly: true
+          description: Máximo 72 bytes UTF-8; se almacena con BCrypt.
+        role:
+          $ref: '#/components/schemas/Role'
+      required:
+      - displayName
+      - email
+      - password
+      - role
+    Money:
+      type: string
+      pattern: ^\d{1,10}(\.\d{1,2})?$
+      description: Importe PEN no negativo, DECIMAL(12,2).
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+        fields:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - status
+      - code
+    Csrf:
+      type: object
+      properties:
+        token:
+          type: string
+        headerName:
+          type: string
+        parameterName:
+          type: string
+      required:
+      - token
+      - headerName
+      - parameterName
+    Health:
+      type: object
+      properties:
+        status:
+          const: UP
+        application:
+          const: nexus-api
+        version:
+          const: 0.2.0
+        phase:
+          const: F1
+        database:
+          const: UP
+        currency:
+          const: PEN
+        timezone:
+          const: America/Lima
+        checkedAt:
+          type: string
+          format: date-time
+      required:
+      - status
+      - application
+      - version
+      - phase
+      - database
+      - currency
+      - timezone
+      - checkedAt
+    ProductInput:
+      type: object
+      properties:
+        name: &id005
+          type: string
+          minLength: 1
+          maxLength: 160
+        active: *id004
+        version: &id006
+          type: integer
+          minimum: 0
+          format: int64
+        sku: &id007
+          type: string
+          minLength: 1
+          maxLength: 40
+          pattern: ^[A-Za-z0-9_-]+$
+        categoryId: *id002
+        cost: &id008
+          $ref: '#/components/schemas/Money'
+        price: &id009
+          $ref: '#/components/schemas/Money'
+        minStock: &id010
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+      required:
+      - name
+      - active
+      - sku
+      - categoryId
+      - cost
+      - price
+      - minStock
+    ProductEdit:
+      allOf:
+      - $ref: '#/components/schemas/ProductInput'
+      - required:
+        - version
+    Product:
+      type: object
+      properties:
+        name: *id005
+        active: *id004
+        version: *id006
+        sku: *id007
+        categoryId: *id002
+        cost: *id008
+        price: *id009
+        minStock: *id010
+        id: *id002
+        categoryName:
+          type: string
+      required:
+      - name
+      - active
+      - version
+      - sku
+      - categoryId
+      - cost
+      - price
+      - minStock
+      - id
+      - categoryName
+    ProductPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    CustomerInput:
+      type: object
+      properties:
+        name: *id005
+        active: *id004
+        version: *id006
+        email:
+          anyOf:
+          - type: 'null'
+          - type: string
+            maxLength: 0
+          - type: string
+            format: email
+            maxLength: 254
+        phone: &id011
+          type:
+          - string
+          - 'null'
+          maxLength: 30
+          pattern: ^(?:|[+()0-9 -]{6,30})$
+      required:
+      - name
+      - active
+    CustomerEdit:
+      allOf:
+      - $ref: '#/components/schemas/CustomerInput'
+      - required:
+        - version
+    Customer:
+      type: object
+      properties:
+        name: *id005
+        active: *id004
+        version: *id006
+        email:
+          type:
+          - string
+          - 'null'
+          format: email
+          maxLength: 254
+        phone: *id011
+        id: *id002
+      required:
+      - name
+      - active
+      - version
+      - email
+      - phone
+      - id
+    CustomerPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    CategoryInput:
+      type: object
+      properties:
+        name: &id012
+          type: string
+          minLength: 1
+          maxLength: 100
+        active: *id004
+        version: *id006
+      required:
+      - name
+      - active
+    CategoryEdit:
+      allOf:
+      - $ref: '#/components/schemas/CategoryInput'
+      - required:
+        - version
+    Category:
+      type: object
+      properties:
+        name: *id012
+        active: *id004
+        version: *id006
+        id: *id002
+      required:
+      - name
+      - active
+      - version
+      - id

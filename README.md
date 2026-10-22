@@ -3,11 +3,17 @@
 Plataforma de gestión empresarial con inteligencia artificial aplicada.
 Proyecto de portafolio de **Guillermo Pereyra · Ingeniería de Software con IA**.
 
-**Entrega 0.1.0: fundación F0, en validación.** Incluye estructura ejecutable,
-pantalla de entorno React, API de salud Java, migraciones iniciales PostgreSQL
-y un workflow de CI. Todavía no incluye login, CRUD, ventas, dashboard ni IA.
-La pantalla consulta conexiones reales; no muestra ventas ni métricas ficticias.
-El [documento maestro original](docs/NEXUS_AI_Especificacion_Maestra.pdf) está incluido como referencia del alcance.
+**Entrega 0.2.0: seguridad y catálogos.** Incluye login/logout real con sesiones,
+cuatro roles, productos, categorías, clientes y alta de usuarios por administrador.
+Los catálogos persisten en PostgreSQL y aplican permisos en la API. No hay ventas,
+inventario disponible, dashboard de indicadores ni IA todavía.
+
+F0 quedó validada en GitHub Actions con PostgreSQL real. Los resultados y límites
+actuales están en [docs/VALIDACION.md](docs/VALIDACION.md). La especificación original
+se conserva en [docs/NEXUS_AI_Especificacion_Maestra.pdf](docs/NEXUS_AI_Especificacion_Maestra.pdf).
+
+**Si vienes de v0.1.0:** sigue [docs/ACTUALIZAR.md](docs/ACTUALIZAR.md) para conservar
+la base y las variables existentes. La nueva migración V3 se aplica automáticamente.
 
 ## Empezar por el frontend
 
@@ -20,9 +26,10 @@ npm run dev
 ```
 
 Abre http://localhost:5173. Puedes revisar la interfaz sin Java ni PostgreSQL;
-en ese caso se mostrará que la API está desconectada. Eso es esperado.
-`npm run setup` genera `.env` con una contraseña aleatoria local; si ya existe,
-lo conserva. No imprime la contraseña y no debes subir ese archivo a GitHub.
+en ese caso verás el acceso, pero no podrás iniciar sesión. Usa «Comprobar estado del entorno» para verificar la conexión.
+`npm run setup` genera `.env` con contraseñas aleatorias locales y añade variables
+ausentes sin reemplazar las existentes. No imprime las contraseñas. Nunca subas
+`.env` ni la salida de `npm run accounts` a GitHub.
 
 ## Conectar el backend
 
@@ -76,8 +83,9 @@ npm run api
 ```
 
 Este comando carga el `.env` raíz y ejecuta Maven en `services/api-java`.
-Flyway crea las tablas e instala cuatro roles y ocho categorías. No crea
-cuentas de usuario todavía. Un segundo arranque no repite la inserción.
+Flyway crea o actualiza las tablas e instala cuatro roles y ocho categorías.
+Con `DEMO_ENABLED=true`, Java crea cuatro cuentas demo en el primer arranque;
+no cambia contraseñas ni duplica registros en los siguientes arranques.
 
 Prueba en el navegador http://127.0.0.1:8080/api/v1/health o en Git Bash:
 
@@ -132,6 +140,11 @@ React → `/api/v1` en Java → PostgreSQL. Vite reenvía `/api` al backend dura
 desarrollo. No se habilita CORS global. Python se incorporará detrás de Java
 cuando el MVP esté estable. No hay despliegue ni integración de servicios pagos.
 
+El contrato se documenta en [docs/API.md](docs/API.md) y
+[docs/openapi.yaml](docs/openapi.yaml). Los listados de productos y clientes
+usarán búsqueda, filtros, orden y páginas con un máximo de 100 filas.
+La edición de catálogos requiere la versión leída: un cambio obsoleto recibe 409.
+
 ## Primer push y siguientes versiones
 
 Sigue [docs/GITHUB.md](docs/GITHUB.md). Sube los archivos extraídos del ZIP,
@@ -139,18 +152,47 @@ incluido `.github`, y conserva `.gitignore`. No subas el ZIP, `node_modules`,
 `target`, `dist` ni `.env`. Cuando exista el repo, los cambios siguientes se
 harán sobre su versión actual y se registrarán con commits.
 
+## Entrar y comprobar roles
+
+Después de iniciar Java, consulta las credenciales únicamente en tu terminal local:
+
+```bash
+npm run accounts
+```
+
+| Cuenta | Permisos |
+|---|---|
+| `admin@nexus.demo` | Catálogos, consulta y creación de usuarios |
+| `manager@nexus.demo` | Crear, editar y desactivar catálogos |
+| `analyst@nexus.demo` | Consultar catálogos, sin edición |
+| `viewer@nexus.demo` | Consultar catálogos, sin edición |
+
+No existe una contraseña pública fija. El comando lee tu `.env`; los valores
+solo se usan al crear cuentas que todavía no existen. Modificar después una
+variable `DEMO_*_PASSWORD` no cambia la contraseña guardada en PostgreSQL.
+Para deshabilitar la creación automática usa `DEMO_ENABLED=false`; eso no
+elimina ni desactiva cuentas ya existentes.
+
+El administrador también puede crear cuentas desde Usuarios. La edición de
+roles, desactivación de usuarios y reinicio de contraseñas aún están pendientes;
+no se ofrecen botones que aparenten ejecutar esas operaciones.
+
 ## Próximo módulo
 
-**F1: autenticación, cuatro roles y catálogos.** Antes de aceptarlo hay que
-cerrar la validación F0 en tu equipo y en GitHub. El roadmap está en
-[docs/ROADMAP.md](docs/ROADMAP.md). El documento maestro del usuario conserva
-la autoridad sobre alcance y criterios; esta entrega no reemplaza el MVP.
+**F2: inventario y ventas.** Movimientos trazables, control de concurrencia,
+ventas atómicas y anulación única. Consulta [docs/ROADMAP.md](docs/ROADMAP.md).
+No hay importación de datos reales, cobros ni emisión fiscal.
 
 ## Notas de seguridad y costo
 
 - Proyecto local de demostración, sin información personal real.
-- Health público solo expone estado y metadatos mínimos. Rutas restantes
-  denegadas hasta F1; no hay login, credenciales por defecto ni RBAC terminado.
+- Health y CSRF son públicos. El resto aplica autorización por ruta y, en
+  catálogos, también por servicio. Login y logout requieren CSRF; las sesiones
+  duran 30 minutos de inactividad y el cierre invalida la cookie anterior.
+- Las cookies son HttpOnly y SameSite=Strict. En un eventual entorno HTTPS
+  debe configurarse `SESSION_COOKIE_SECURE=true`. Esta entrega es local.
+- Límite local de 10 intentos de acceso por IP y minuto. No es un limitador
+  distribuido; detrás de Vite todas las peticiones comparten la IP del proxy.
 - Migraciones versionadas, zona horaria de almacenamiento UTC; interfaz Lima,
   moneda PEN. Los importes usarán DECIMAL cuando se implemente operación.
 - No se activaron cargos, hosting, suscripciones ni APIs facturables.
