@@ -309,6 +309,8 @@ function Adjustment({
             Cantidad
             <input
               type="number"
+              aria-label="Cantidad"
+              aria-describedby="adjustment-quantity-hint"
               required
               min={type === "ENTRY" ? 1 : -1000000}
               max={1000000}
@@ -319,7 +321,7 @@ function Adjustment({
                 changed();
               }}
             />
-            <small>
+            <small id="adjustment-quantity-hint">
               {type === "ENTRY"
                 ? "Cantidad de unidades que ingresan."
                 : "Usa una cantidad negativa para descontar o positiva para agregar."}
