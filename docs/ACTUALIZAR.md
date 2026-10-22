@@ -1,4 +1,12 @@
-# Actualizar a 0.4.0
+# Actualizar a 0.5.0
+
+Si utilizas la [demo pública](https://nexus-ai-gpereyradev.onrender.com/),
+recarga la página e ingresa con tu cuenta habitual. El selector de apariencia
+está arriba a la derecha. El tema inicial es oscuro morado y negro; tu elección
+se conserva en ese navegador.
+
+Esta versión mejora la interfaz y los flujos de uso, sin nuevas migraciones.
+Si vienes de 0.4.1, basta actualizar el código y reiniciar los servicios.
 
 Desde tu copia existente revisa `git status` y guarda tus cambios de código.
 No necesitas otro ZIP ni recrear la BD. `.env` permanece fuera de Git.
@@ -10,7 +18,7 @@ npm ci
 npm run setup
 ```
 
-Antes de integrar el PR, la rama de desarrollo es `feat/f4-analytics`.
+Si vienes de una versión anterior a 0.4.0, prepara también la analítica:
 Setup conserva valores existentes y añade `ANALYTICS_ENABLED`, `ANALYTICS_URL`,
 `ANALYTICS_TIMEOUT_MS` y una `ANALYTICS_API_KEY` aleatoria. No publica ni imprime
 la clave. Si copiaste el placeholder manualmente, elimina solo esa línea de tu
@@ -22,7 +30,7 @@ Detén Java y reinícialo:
 npm run api
 ```
 
-Flyway aplica V5 para snapshots de análisis. V1–V4 siguen intactas y no se
+Si aún falta, Flyway aplica V5 para snapshots de análisis. V1–V4 siguen intactas y no se
 borran usuarios, ventas ni stock. Las versiones antiguas aplican V3/V4 primero
 si aún faltan. No elimines tablas ni volúmenes para actualizar.
 
