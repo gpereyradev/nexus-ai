@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from "react";
-import { ApiError, save } from "../api/client";
+import { useEffect, useState, type FormEvent } from "react";
+import { ApiError, request, save } from "../api/client";
 import { currency, dateTime, daysBefore, limaDate } from "../api/operations";
 type Point = { date: string; value: string };
 type Result = {
+  runId: string;
   method: string;
   methodVersion: string;
   forecastHorizonDays: number;
@@ -72,6 +73,49 @@ export default function Analytics() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
   const [insufficient, setInsufficient] = useState(false);
+  const [saved, setSaved] = useState<
+    {
+      id: string;
+      createdAt: string;
+      method: string;
+      mae: string;
+      from: string;
+      to: string;
+      horizon: number;
+    }[]
+  >([]);
+  const [historyError, setHistoryError] = useState("");
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    setHistoryError("");
+    request<typeof saved>("/analytics/runs", { signal: controller.signal })
+      .then(setSaved)
+      .catch((e) => {
+        if (!controller.signal.aborted) setHistoryError(e.message);
+      });
+    return () => controller.abort();
+  }, [revision]);
+  async function restore(id: string) {
+    setBusy(true);
+    setError("");
+    setResult(null);
+    setInsufficient(false);
+    try {
+      const value = await request<Result>("/analytics/runs/" + id);
+      setResult(value);
+      setFrom(value.trainingPeriod.from);
+      setTo(value.trainingPeriod.to);
+      setHorizon(value.forecastHorizonDays);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "No se pudo abrir el análisis.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -86,6 +130,7 @@ export default function Analytics() {
           forecastHorizonDays: horizon,
         }),
       );
+      setRevision((x) => x + 1);
     } catch (e) {
       setInsufficient(e instanceof ApiError && e.status === 422);
       setError(
@@ -224,6 +269,59 @@ export default function Analytics() {
             </article>
           </div>
         </section>
+      )}
+      {saved.length > 0 && (
+        <details className="panel saved-analyses">
+          <summary>Análisis guardados · últimos {saved.length}</summary>
+          <p className="form-hint">
+            Cada resultado conserva la serie y los agregados utilizados. Se abre
+            sin recalcular ni necesitar que Python esté disponible.
+          </p>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Generado Lima</th>
+                  <th>Período</th>
+                  <th>Método / MAE</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {saved.map((r) => (
+                  <tr key={r.id}>
+                    <td>{dateTime(r.createdAt)}</td>
+                    <td>
+                      {r.from} → {r.to}
+                      <small className="cell-note">
+                        Horizonte: {r.horizon} días
+                      </small>
+                    </td>
+                    <td>
+                      {methodName(r.method)}
+                      <small className="cell-note">{currency(r.mae)}</small>
+                    </td>
+                    <td>
+                      <button
+                        className="secondary"
+                        disabled={busy}
+                        aria-label={`Abrir análisis ${r.id}`}
+                        onClick={() => void restore(r.id)}
+                      >
+                        Abrir
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      )}
+      {historyError && (
+        <p role="alert" className="connection-message">
+          No se pudo consultar el historial: {historyError}
+        </p>
       )}
       {result && (
         <>
@@ -422,9 +520,9 @@ export default function Analytics() {
             <h2>Unidades y cobertura estimada</h2>
             <p className="form-hint">
               Hasta 10 productos por faltante estimado. Promedio de los últimos
-              28 días del período y stock actual al {dateTime(result.stockAsOf)}
-              . Objetivo: 14 días. Sin ventas observadas no se inventa demanda
-              ni cobertura.
+              28 días del período y stock registrado al{" "}
+              {dateTime(result.stockAsOf)}. Objetivo: 14 días. Sin ventas
+              observadas no se inventa demanda ni cobertura.
             </p>
             <div className="table-scroll">
               <table>
@@ -478,8 +576,9 @@ export default function Analytics() {
               ))}
             </ul>
             <p className="form-hint">
-              Generado el {dateTime(result.generatedAt)} · Modelo local, sin
-              APIs comerciales.
+              Análisis {result.runId} · Generado el{" "}
+              {dateTime(result.generatedAt)} · Modelo local, sin APIs
+              comerciales.
             </p>
           </section>
         </>

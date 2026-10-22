@@ -26,13 +26,23 @@ def test_ridge_only_selected_when_it_improves_both_temporal_blocks():
     assert Decimal(e['selectionCandidateMAE'])<Decimal(e['selectionBaselineMAE'])*Decimal('.9')
     assert all(Decimal(p['value'])>=0 for p in result['predictions'])
 
-def test_models_cannot_use_unknown_holdout_values():
-    dates=[date(2026,1,1)+timedelta(days=i) for i in range(100)]
-    past=np.array([100+2*i for i in range(86)])
-    for method in (BASELINE,CANDIDATE):
-        first=predict(method,dates[:86],past,dates[86:])
-        # Neither future targets nor fitted global statistics are supplied.
-        assert np.array_equal(first,predict(method,dates[:86],past.copy(),dates[86:]))
+def test_models_cannot_use_unknown_holdout_values(monkeypatch):
+    import nexus_analytics.forecast as module
+    calls=[]
+    original=module.predict
+    def observed(method, dates, values, future):
+        assert max(dates)<min(future)
+        result=original(method,dates,values,future)
+        calls.append(result.copy())
+        return result
+    monkeypatch.setattr(module,'predict',observed)
+    first=[100+2*i for i in range(112)]
+    forecast(ForecastInput(**payload(first)))
+    before=calls[:4];calls.clear()
+    # Only the withheld targets change. Both selection and holdout predictions
+    # must remain identical; the final refit may legitimately change.
+    forecast(ForecastInput(**payload(first[:-14]+[99999]*14)))
+    assert all(np.array_equal(a,b) for a,b in zip(before,calls[:4]))
 
 @pytest.mark.parametrize('values',[[0]*112,[100]*83,[0]*80+[100]*32,[100 if i%7==0 else 0 for i in range(112)]])
 def test_insufficient_or_sparse_history_never_invents_curve(values):

@@ -17,5 +17,8 @@ public final class AnalyticsDtos {
     public record Summary(String total,String dailyAverage,String minimum,String maximum) {}
     public record Anomaly(LocalDate date,String value,String reference,String threshold,String reason) {}
     public record Replenishment(UUID id,String sku,String name,long stock,int minStock,long unitsSold,String dailyUnits,String coverageDays,long targetUnits,long suggestedUnits) {}
-    public record ForecastResult(String metric,int forecastHorizonDays,String method,String methodVersion,String currency,String timezone,Instant generatedAt,boolean demoData,Instant stockAsOf,Period trainingPeriod,Evaluation evaluation,List<Point> history,List<Point> predictions,Summary summary,List<Anomaly> anomalies,List<Replenishment> replenishment,List<String> warnings) {}
+    public record ForecastResult(UUID runId,String metric,int forecastHorizonDays,String method,String methodVersion,String currency,String timezone,Instant generatedAt,boolean demoData,Instant stockAsOf,Period trainingPeriod,Evaluation evaluation,List<Point> history,List<Point> predictions,Summary summary,List<Anomaly> anomalies,List<Replenishment> replenishment,List<String> warnings) {
+        public ForecastResult withRunId(UUID id){return new ForecastResult(id,metric,forecastHorizonDays,method,methodVersion,currency,timezone,generatedAt,demoData,stockAsOf,trainingPeriod,evaluation,history,predictions,summary,anomalies,replenishment,warnings);}
+    }
+    public record RunSummary(UUID id,Instant createdAt,String method,String mae,String from,String to,int horizon) {}
 }

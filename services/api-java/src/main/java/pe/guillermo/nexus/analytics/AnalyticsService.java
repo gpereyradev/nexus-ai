@@ -7,7 +7,8 @@ import static pe.guillermo.nexus.analytics.AnalyticsDtos.*;
 public class AnalyticsService {
     private final AnalyticsAggregates aggregates;
     private final AnalyticsClient client;
-    public AnalyticsService(AnalyticsAggregates aggregates,AnalyticsClient client){this.aggregates=aggregates;this.client=client;}
+    private final AnalyticsRuns runs;
+    public AnalyticsService(AnalyticsAggregates aggregates,AnalyticsClient client,AnalyticsRuns runs){this.aggregates=aggregates;this.client=client;this.runs=runs;}
     // Aggregate transaction ends before waiting on Python; sales never call this service.
-    public ForecastResult forecast(ForecastInput input){return client.forecast(aggregates.load(input));}
+    public ForecastResult forecast(ForecastInput input){var payload=aggregates.load(input);return runs.save(payload,client.forecast(payload));}
 }

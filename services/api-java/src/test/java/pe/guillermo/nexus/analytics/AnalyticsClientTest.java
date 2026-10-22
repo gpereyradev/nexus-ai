@@ -20,7 +20,7 @@ class AnalyticsClientTest {
     private Payload payload() {var days=new ArrayList<Day>();for(int i=0;i<112;i++)days.add(new Day(LocalDate.of(2026,1,1).plusDays(i),new BigDecimal("1.00")));return new Payload(7,days,List.of(),0,28,false,Instant.now());}
     private ForecastResult valid(Payload p) {
         var history=p.series().stream().map(d->new Point(d.date(),"1.00")).toList();var end=history.get(111).date();var future=new ArrayList<Point>();for(int i=1;i<=7;i++)future.add(new Point(end.plusDays(i),"1.00"));
-        return new ForecastResult("daily_sales_pen",7,"seasonal_naive_v1","1.0.0","PEN","America/Lima",Instant.now(),false,p.stockAsOf(),new AnalyticsDtos.Period(history.get(0).date(),end,112,112),new Evaluation(end.minusDays(27),end.minusDays(14),end.minusDays(13),end,end.minusDays(14),14,"0.00","1.00","0.00","1.00","0.00","ridge_calendar_v1",10),history,future,new Summary("112.00","1.00","1.00","1.00"),List.of(),List.of(),List.of("Estimación orientativa"));
+        return new ForecastResult(null,"daily_sales_pen",7,"seasonal_naive_v1","1.0.0","PEN","America/Lima",Instant.now(),false,p.stockAsOf(),new AnalyticsDtos.Period(history.get(0).date(),end,112,112),new Evaluation(end.minusDays(27),end.minusDays(14),end.minusDays(13),end,end.minusDays(14),14,"0.00","1.00","0.00","1.00","0.00","ridge_calendar_v1",10),history,future,new Summary("112.00","1.00","1.00","1.00"),List.of(),List.of(),List.of("Estimación orientativa"));
     }
     private AnalyticsClient server(int status,String body,long delay) throws Exception {
         server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);executor=Executors.newCachedThreadPool();server.setExecutor(executor);
