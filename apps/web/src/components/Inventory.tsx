@@ -1,3 +1,4 @@
+import ClearFilters from "./ClearFilters";
 import { useEffect, useState, type FormEvent } from "react";
 import { request, save } from "../api/client";
 import {
@@ -127,6 +128,7 @@ export default function Inventory({
         <button className="secondary" type="submit">
           Buscar
         </button>
+        <ClearFilters params={params} onParams={onParams} />
       </form>
       {notice && (
         <p role="status" className="connection-message success">

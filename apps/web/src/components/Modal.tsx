@@ -13,8 +13,20 @@ export default function Modal({
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialog = ref.current!;
+    const previous =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     dialog.showModal();
-    return () => dialog.close();
+    dialog
+      .querySelector<HTMLElement>(
+        "input:not([type=checkbox]):not(:disabled), textarea:not(:disabled), select:not(:disabled)",
+      )
+      ?.focus();
+    return () => {
+      dialog.close();
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
+    };
   }, []);
   return (
     <dialog

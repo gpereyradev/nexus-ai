@@ -8,14 +8,19 @@ async function login(page: Page, role = "admin") {
   await page.getByRole("button", { name: "Ingresar al espacio" }).click();
   await expect(page.getByTestId("kpi-sales")).toBeVisible();
 }
-async function inventory(page: Page, sku: string, stock: number) {
+async function navigate(page: Page, title: string) {
+  const menu = page.getByRole("button", { name: "Abrir menú", exact: true });
+  if (await menu.isVisible()) await menu.click();
   await page
     .getByRole("navigation")
-    .getByRole("button", { name: "Inventario", exact: true })
+    .getByRole("button", { name: title, exact: true })
     .click();
+}
+async function inventory(page: Page, sku: string, stock: number) {
+  await navigate(page, "Inventario");
   await page.getByPlaceholder("Nombre o SKU").fill(sku);
   await page.getByRole("button", { name: "Buscar", exact: true }).click();
-  const row=page.getByRole("row").filter({hasText:sku});
+  const row = page.getByRole("row").filter({ hasText: sku });
   await expect(row).toHaveCount(1);
   await expect(row.getByTestId("stock")).toHaveText(String(stock));
 }
@@ -28,10 +33,7 @@ test("venta real: catálogo, ingreso, venta, reporte, anulación y trazabilidad"
     "",
   );
   const sku = `E2E-${Date.now()}`;
-  await page
-    .getByRole("navigation")
-    .getByRole("button", { name: "Productos", exact: true })
-    .click();
+  await navigate(page, "Productos");
   await page.getByRole("button", { name: "Nuevo producto" }).click();
   const editor = page.getByRole("dialog");
   await editor
@@ -58,10 +60,7 @@ test("venta real: catálogo, ingreso, venta, reporte, anulación y trazabilidad"
     .getByRole("button", { name: "Registrar movimiento", exact: true })
     .click();
   await expect(page.getByTestId("stock")).toHaveText("5");
-  await page
-    .getByRole("navigation")
-    .getByRole("button", { name: "Ventas", exact: true })
-    .click();
+  await navigate(page, "Ventas");
   await page.getByRole("button", { name: "Nueva venta" }).click();
   await page.getByLabel("Buscar producto", { exact: true }).fill(sku);
   await page.getByRole("button").filter({ hasText: sku }).click();
@@ -74,20 +73,14 @@ test("venta real: catálogo, ingreso, venta, reporte, anulación y trazabilidad"
   await expect(receipt).toContainText("S/ 39.80");
   await receipt.getByRole("button", { name: "Cerrar formulario" }).click();
   await inventory(page, sku, 3);
-  await page
-    .getByRole("navigation")
-    .getByRole("button", { name: "Panel", exact: true })
-    .click();
+  await navigate(page, "Panel");
   await expect(page.getByTestId("kpi-sales")).toHaveText(
     new Intl.NumberFormat("es-PE", {
       style: "currency",
       currency: "PEN",
     }).format(Number(baseline) + 39.8),
   );
-  await page
-    .getByRole("navigation")
-    .getByRole("button", { name: "Ventas", exact: true })
-    .click();
+  await navigate(page, "Ventas");
   await page.getByPlaceholder("Código o cliente").fill(code);
   await page.getByRole("button", { name: "Buscar", exact: true }).click();
   await page
@@ -107,10 +100,7 @@ test("venta real: catálogo, ingreso, venta, reporte, anulación y trazabilidad"
   await expect(page.locator(".movement-list li")).toHaveCount(3);
   await expect(page.getByRole("dialog")).toContainText("Reversión");
   await page.getByRole("button", { name: "Cerrar formulario" }).click();
-  await page
-    .getByRole("navigation")
-    .getByRole("button", { name: "Panel", exact: true })
-    .click();
+  await navigate(page, "Panel");
   await expect(page.getByTestId("kpi-sales")).toHaveText(
     new Intl.NumberFormat("es-PE", {
       style: "currency",
@@ -126,10 +116,7 @@ test("lector: reportes y navegación móvil con escrituras denegadas en la API",
   await page.getByRole("button", { name: "Ver período demo" }).click();
   await expect(page.getByTestId("kpi-sales")).toBeVisible();
   await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
-  await page
-    .getByRole("navigation")
-    .getByRole("button", { name: "Ventas", exact: true })
-    .click();
+  await navigate(page, "Ventas");
   await expect(page.getByRole("button", { name: "Nueva venta" })).toHaveCount(
     0,
   );
@@ -154,6 +141,7 @@ test("lector: reportes y navegación móvil con escrituras denegadas en la API",
   });
   expect(analysis.status()).toBe(403);
   expect((await page.request.get("/api/v1/analytics/runs")).status()).toBe(403);
+  await page.getByRole("button", { name: "Abrir menú", exact: true }).click();
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await expect(
     page.getByRole("button", { name: "Ingresar al espacio" }),
@@ -164,10 +152,7 @@ test("análisis real de Python: pronóstico evaluado y estado de historial insuf
   page,
 }) => {
   await login(page);
-  await page
-    .getByRole("navigation")
-    .getByRole("button", { name: "Análisis", exact: true })
-    .click();
+  await navigate(page, "Análisis");
   await page.getByRole("button", { name: "Usar fechas demo" }).click();
   const pending = page.waitForResponse(
     (r) =>
@@ -211,9 +196,88 @@ test("análisis real de Python: pronóstico evaluado y estado de historial insuf
   ).toBeVisible();
   await expect(page.getByTestId("forecast-total")).toHaveCount(0);
   expect(result.runId).toMatch(/^[0-9a-f-]{36}$/);
-  const saved=await page.request.get('/api/v1/analytics/runs/'+result.runId);expect(saved.status()).toBe(200);expect((await saved.json()).predictions).toEqual(result.predictions);
-  await page.locator('.saved-analyses summary').click();
-  await page.getByRole('button',{name:'Abrir análisis '+result.runId,exact:true}).click();
-  await expect(page.getByTestId('forecast-total')).toBeVisible();
-  await expect(page.getByText('Estimación · 7 días',{exact:true})).toBeVisible();
+  const saved = await page.request.get(
+    "/api/v1/analytics/runs/" + result.runId,
+  );
+  expect(saved.status()).toBe(200);
+  expect((await saved.json()).predictions).toEqual(result.predictions);
+  await page.locator(".saved-analyses summary").click();
+  await page
+    .getByRole("button", {
+      name: "Abrir análisis " + result.runId,
+      exact: true,
+    })
+    .click();
+  await expect(page.getByTestId("forecast-total")).toBeVisible();
+  await expect(
+    page.getByText("Estimación · 7 días", { exact: true }),
+  ).toBeVisible();
+});
+
+test("apariencia persistente y accesos rápidos en escritorio y móvil", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page
+    .getByRole("button", { name: "Activar tema claro", exact: true })
+    .click();
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  const password = page.getByLabel("Contraseña", { exact: true });
+  await page
+    .getByRole("button", { name: "Mostrar contraseña", exact: true })
+    .click();
+  await expect(password).toHaveAttribute("type", "text");
+  await page
+    .getByRole("button", { name: "Ocultar contraseña", exact: true })
+    .click();
+  await expect(password).toHaveAttribute("type", "password");
+  await login(page);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page
+    .getByRole("button", { name: "Activar tema oscuro", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Últimos 7 días", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Últimos 7 días", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("kpi-sales")).toBeVisible();
+  await page
+    .getByRole("button", {
+      name: "Nueva venta Registra productos en pocos pasos",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Nueva venta", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Buscar producto", { exact: true }),
+  ).toBeFocused();
+  await expect(
+    page.getByLabel("Buscar cliente (opcional)", { exact: true }),
+  ).not.toBeVisible();
+  await page.getByText("Agregar cliente · opcional", { exact: true }).click();
+  await expect(
+    page.getByLabel("Buscar cliente (opcional)", { exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await navigate(page, "Inventario");
+  await page.getByLabel("Alerta").selectOption("true");
+  await page
+    .getByRole("button", { name: "Limpiar filtros", exact: true })
+    .click();
+  await expect(page.getByLabel("Alerta")).toHaveValue("false");
+  await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+  await page.getByRole("button", { name: "Abrir menú", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: "Abrir menú", exact: true }),
+  ).toBeFocused();
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });

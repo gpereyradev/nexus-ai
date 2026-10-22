@@ -158,7 +158,7 @@ export default function Analytics() {
             Explora ventas, cambios inusuales y cobertura de inventario. Los análisis guardan su evidencia sin modificar ventas ni existencias.
           </p>
         </div>
-        <span className="pill">PYTHON · MODELO LOCAL</span>
+        <span className="pill">PRONÓSTICOS DE VENTAS</span>
       </div>
       <form
         className="filters analytics-filters"
@@ -375,7 +375,7 @@ export default function Analytics() {
               <span className="pill">PEN · LIMA</span>
             </div>
             <p className="form-hint">
-              Línea continua: observado. Línea azul discontinua: estimación. La
+              Línea continua: observado. Línea discontinua: estimación. La
               gráfica muestra los últimos 56 días del historial y el horizonte
               elegido. No hay intervalo de confianza calibrado.
             </p>
@@ -390,12 +390,12 @@ export default function Analytics() {
               aria-label="Ventas diarias observadas y pronóstico orientativo. Consulta todas las cifras en la tabla inferior."
             >
               {[32, 81, 130, 180].map((y) => (
-                <line key={y} x1="24" x2="776" y1={y} y2={y} stroke="#e1e8e4" />
+                <line key={y} x1="24" x2="776" y1={y} y2={y} stroke="var(--line)" />
               ))}
               <polyline
                 points={points.slice(0, historySize).map(point).join(" ")}
                 fill="none"
-                stroke="#168b70"
+                stroke="var(--chart)"
                 strokeWidth="3"
               />
               <polyline
@@ -404,7 +404,7 @@ export default function Analytics() {
                   .map((p, i) => point(p, historySize - 1 + i))
                   .join(" ")}
                 fill="none"
-                stroke="#376bce"
+                stroke="var(--forecast)"
                 strokeWidth="3"
                 strokeDasharray="6 5"
               />

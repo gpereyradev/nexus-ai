@@ -5,7 +5,7 @@
 - Stack: React + TypeScript, Java/Spring Boot y PostgreSQL. Python desde F4.
 - Presupuesto externo S/0. No activar pagos, pruebas facturables ni hosting
   que requiera tarjeta. No realizar acciones externas que no solicite el usuario.
-- Entrega actual: 0.4.1. F0 tiene integración Java/PostgreSQL aprobada en CI.
+- Entrega actual: 0.5.0. F0 tiene integración Java/PostgreSQL aprobada en CI.
 - F1 incorpora login/logout con sesión y CSRF, cuatro roles, catálogos y alta de usuarios.
 - F2/F3 incorporan stock por ledger, ventas atómicas, anulación única y reportes SQL.
 - F4: FastAPI, Ridge y referencia semanal; MAE temporal, anomalías, reposición y snapshots.

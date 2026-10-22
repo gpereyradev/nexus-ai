@@ -7,6 +7,9 @@ import Inventory from "./components/Inventory";
 import Sales from "./components/Sales";
 import Dashboard from "./components/Dashboard";
 import Analytics from "./components/Analytics";
+import Modal from "./components/Modal";
+import Icon from "./components/Icon";
+import ThemeToggle from "./components/ThemeToggle";
 const roles = {
   ADMIN: "Administrador",
   MANAGER: "Gestor",
@@ -14,7 +17,9 @@ const roles = {
   VIEWER: "Lector",
 };
 const publicDeployment = import.meta.env.VITE_DEPLOYMENT_MODE === "public";
-const deploymentLabel = publicDeployment ? "Demostración web" : "Demostración local";
+const deploymentLabel = publicDeployment
+  ? "Demostración web"
+  : "Demostración local";
 const titles: Record<string, string> = {
   home: "Tu negocio, bien organizado.",
   products: "Productos",
@@ -25,7 +30,17 @@ const titles: Record<string, string> = {
   sales: "Ventas",
   analytics: "Análisis y pronósticos",
 };
+const descriptions: Record<string, string> = {
+  products: "Administra tu catálogo y mantén los precios al día.",
+  customers: "Ten a mano los datos de tus clientes.",
+  categories: "Organiza tus productos para encontrarlos más rápido.",
+  inventory: "Consulta existencias y revisa cada movimiento.",
+  sales: "Registra una venta o encuentra su detalle.",
+  analytics: "Convierte tu historial de ventas en información útil.",
+  users: "Gestiona el acceso a tu espacio de trabajo.",
+};
 export default function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [account, setAccount] = useState<Account | null>(null);
   const [checking, setChecking] = useState(true);
   const [notice, setNotice] = useState("");
@@ -56,7 +71,10 @@ export default function App() {
       setAccount(null);
       setNotice("Tu sesión terminó. Vuelve a ingresar.");
     };
-    const pop = () => setQuery(window.location.search);
+    const pop = () => {
+      setQuery(window.location.search);
+      setMenuOpen(false);
+    };
     window.addEventListener("nexus:session-expired", expired);
     window.addEventListener("popstate", pop);
     return () => {
@@ -80,11 +98,14 @@ export default function App() {
       window.location.pathname + (search ? "?" + search : ""),
     );
     setQuery(window.location.search);
+    setMenuOpen(false);
+    if (reset) window.scrollTo({ top: 0, behavior: "instant" });
   }
   async function leave() {
     try {
       await logout();
       setAccount(null);
+      setMenuOpen(false);
       setNotice("Sesión cerrada correctamente.");
       change({}, true);
     } catch (e) {
@@ -113,17 +134,36 @@ export default function App() {
     );
   const canEdit = account.role === "ADMIN" || account.role === "MANAGER";
   const nav = [
-    ["home", "Panel", "◫"],
-    ["sales", "Ventas", "↗"],
-    ["inventory", "Inventario", "▥"],
-    ...(account.role !== "VIEWER" ? [["analytics", "Análisis", "◈"]] : []),
-    ["products", "Productos", "▦"],
-    ["customers", "Clientes", "◎"],
-    ["categories", "Categorías", "▤"],
-    ...(account.role === "ADMIN" ? [["users", "Usuarios", "◇"]] : []),
+    ["home", "Panel"],
+    ["sales", "Ventas"],
+    ["inventory", "Inventario"],
+    ...(account.role !== "VIEWER" ? [["analytics", "Análisis"]] : []),
+    ["products", "Productos"],
+    ["customers", "Clientes"],
+    ["categories", "Categorías"],
+    ...(account.role === "ADMIN" ? [["users", "Usuarios"]] : []),
   ];
+  const navigation = (label: string) => (
+    <nav aria-label={label}>
+      {nav.map(([id, title]) => (
+        <button
+          key={id}
+          className={view === id ? "active" : ""}
+          aria-current={view === id ? "page" : undefined}
+          onClick={() => change({ view: id }, true)}
+        >
+          <Icon name={id} />
+          {title}
+          {view === id && <span className="nav-current" aria-hidden="true" />}
+        </button>
+      ))}
+    </nav>
+  );
   return (
     <div className="layout">
+      <a className="skip-link" href="#main">
+        Saltar al contenido
+      </a>
       <aside className="sidebar">
         <Brand />
         <div className="workspace">
@@ -136,19 +176,7 @@ export default function App() {
           </div>
         </div>
         <p className="nav-label">ESPACIO DE TRABAJO</p>
-        <nav aria-label="Navegación principal">
-          {nav.map(([id, title, icon]) => (
-            <button
-              key={id}
-              className={view === id ? "active" : ""}
-              aria-current={view === id ? "page" : undefined}
-              onClick={() => change({ view: id }, true)}
-            >
-              <span aria-hidden="true">{icon}</span>
-              {title}
-            </button>
-          ))}
-        </nav>
+        {navigation("Navegación principal")}
         <div className="sidebar-note">
           <span className="small-dot" /> {deploymentLabel.toUpperCase()}
           <p>
@@ -156,37 +184,64 @@ export default function App() {
             <br />
             Decisiones con base.
           </p>
-          <small>v0.4.1 · Gestión y analítica</small>
+          <small>v0.5.0 · Gestión y analítica</small>
         </div>
         <button className="logout-button" onClick={() => void leave()}>
-          Cerrar sesión ↗
+          <Icon name="logout" /> Cerrar sesión
         </button>
         <footer className="sidebar-footer">
           Ingeniería de Software con IA
         </footer>
       </aside>
+      {menuOpen && (
+        <Modal title="Menú de navegación" onClose={() => setMenuOpen(false)}>
+          <div className="mobile-account">
+            <strong>{account.displayName}</strong>
+            <small>{roles[account.role]}</small>
+          </div>
+          {navigation("Navegación móvil")}
+          <button
+            className="secondary mobile-logout"
+            onClick={() => void leave()}
+          >
+            <Icon name="logout" />
+            Cerrar sesión
+          </button>
+        </Modal>
+      )}
       <div className="content">
         <header className="topbar">
-          <span>
-            NEXUS AI <span className="slash">/</span>
-            <strong>{view === "home" ? "Inicio" : titles[view]}</strong>
-          </span>
-          <span className="local-label">
-            {roles[account.role]} · PEN · LIMA
-          </span>
+          <div className="topbar-start">
+            <button
+              className="menu-toggle secondary"
+              aria-label="Abrir menú"
+              aria-expanded={menuOpen}
+              aria-haspopup="dialog"
+              onClick={() => setMenuOpen(true)}
+            >
+              <Icon name="menu" />
+            </button>
+            <span>
+              NEXUS AI <span className="slash">/</span>
+              <strong>{view === "home" ? "Inicio" : titles[view]}</strong>
+            </span>
+          </div>
+          <div className="topbar-actions">
+            <span className="local-label">PEN · LIMA</span>
+            <ThemeToggle />
+          </div>
         </header>
-        <main id="main">
+        <main id="main" tabIndex={-1}>
           <div className="page-heading">
             <div>
-              <p className="eyebrow">GESTIÓN EMPRESARIAL / FASES 01–04</p>
+              <p className="eyebrow">TU ESPACIO DE TRABAJO</p>
               <h1>{titles[view]}</h1>
               <p className="subtitle">
                 {view === "home"
                   ? `Bienvenido, ${account.displayName}.`
-                  : "Consulta y organiza tu operación desde un solo espacio."}
+                  : descriptions[view]}
               </p>
             </div>
-            <span className="version">v0.4.1</span>
           </div>
           {notice && (
             <p className="connection-message" role="status">
@@ -195,6 +250,8 @@ export default function App() {
           )}
           {view === "home" ? (
             <Dashboard
+              canEdit={canEdit}
+              canAnalyze={account.role !== "VIEWER"}
               navigate={(id, filters = {}) =>
                 change({ view: id, ...filters }, true)
               }
@@ -236,7 +293,7 @@ function Brand() {
       <span className="brand-mark">N</span>
       <span>
         NEXUS<span className="brand-ai"> AI</span>
-        <small>BUSINESS WORKSPACE</small>
+        <small>GESTIÓN + INTELIGENCIA</small>
       </span>
     </a>
   );
@@ -250,6 +307,7 @@ function Login({
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [environment, setEnvironment] = useState(false);
@@ -271,7 +329,7 @@ function Login({
       <section className="login-story">
         <Brand />
         <div>
-          <p className="eyebrow">NEXUS AI / BUSINESS WORKSPACE</p>
+          <p className="eyebrow">TU NEGOCIO, CONECTADO</p>
           <h1>
             Todo en su lugar.
             <br />
@@ -282,14 +340,17 @@ function Login({
             acceso según tu rol.
           </p>
           <div className="login-tags">
-            <span>React + TypeScript</span>
-            <span>Java + Spring Boot</span>
-            <span>PostgreSQL</span>
+            <span>Ventas</span>
+            <span>Inventario</span>
+            <span>Análisis y pronósticos</span>
           </div>
         </div>
         <small>Guillermo Pereyra · Ingeniería de Software con IA</small>
       </section>
       <main id="main" className="login-main">
+        <div className="login-appearance">
+          <ThemeToggle />
+        </div>
         <div className="login-card">
           <p className="eyebrow">BIENVENIDO A NEXUS</p>
           <h2>Entra a tu espacio</h2>
@@ -315,16 +376,30 @@ function Login({
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </label>
-              <label>
-                Contraseña
-                <input
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </label>
+              <div className="password-group">
+                <label htmlFor="login-password">Contraseña</label>
+                <span className="password-field">
+                  <input
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    className="password-toggle"
+                    type="button"
+                    aria-label={
+                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                    }
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? "Ocultar" : "Mostrar"}
+                  </button>
+                </span>
+              </div>
               {error && (
                 <p className="connection-message" role="alert">
                   {error}
@@ -337,14 +412,19 @@ function Login({
           </form>
           <details className="demo-help">
             <summary>¿Cómo obtengo una cuenta de demostración?</summary>
-            {publicDeployment ? <p>
-              Solicita una cuenta al responsable de esta demostración. Si el
-              servicio está iniciando, la primera conexión puede tardar un momento.
-            </p> : <p>
-              Después de configurar e iniciar Java, ejecuta{" "}
-              <code>npm run accounts</code> en tu equipo para consultar tus
-              credenciales locales. No las publiques.
-            </p>}
+            {publicDeployment ? (
+              <p>
+                Solicita una cuenta al responsable de esta demostración. Si el
+                servicio está iniciando, la primera conexión puede tardar un
+                momento.
+              </p>
+            ) : (
+              <p>
+                Después de configurar e iniciar Java, ejecuta{" "}
+                <code>npm run accounts</code> en tu equipo para consultar tus
+                credenciales locales. No las publiques.
+              </p>
+            )}
           </details>
           <button
             className="text-button"
@@ -356,7 +436,7 @@ function Login({
           </button>
           {environment && <Environment />}
           <p className="login-footnote">
-            v0.4.1 · {deploymentLabel} · Datos ficticios
+            v0.5.0 · {deploymentLabel} · Datos ficticios
           </p>
         </div>
       </main>
