@@ -1,5 +1,24 @@
 # Cambios
 
+## 0.4.0 · 22/10/2026
+
+- Servicio Python local con FastAPI y scikit-learn, autenticado mediante clave
+  interna aleatoria; recibe agregados de Java sin clientes, usuarios ni cookies.
+- Pronóstico de 1–14 días, referencia semanal y regresión Ridge con calendario.
+  Compara dos bloques cronológicos de 14 días, reporta MAE y conserva el baseline
+  si Ridge no mejora al menos 10% en ambos. No afirma evaluación independiente.
+- Historial mínimo de 84 días y 28 con ventas, rechazo de días incompletos/futuros,
+  alertas por mediana/MAD y cálculo explícito de cobertura/reposición.
+- Pantalla de análisis con estados vacíos/insuficientes, errores recuperables,
+  tabla de cifras, versión, períodos, advertencias y apertura de análisis guardados.
+- V5 guarda snapshots agregados y resultados inmutables con huella SHA-256.
+  Las migraciones V1–V4 permanecen intactas.
+- Timeouts, cancelación HTTP, límite de dos cálculos simultáneos y rutas por rol.
+  Una caída de Python no bloquea health, inventario ni confirmación de ventas.
+- Lanzador npm, perfil Compose opcional y dependencias Python fijadas.
+- Pruebas Python, HTTP Java, agregados/roles/resiliencia PostgreSQL y E2E con
+  React, Java y Python reales. Evidencia exacta en docs/VALIDACION.md.
+
 ## 0.3.0 · 22/10/2026
 
 - Inventario paginado con búsqueda, categorías, activos y alertas de stock bajo.

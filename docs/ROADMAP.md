@@ -1,4 +1,4 @@
-# Roadmap y aceptación · 0.3.0
+# Roadmap y aceptación · 0.4.0
 
 Fuente: especificación maestra NEXUS AI v1.0. Primero F0–F3, Python desde F4.
 
@@ -8,7 +8,7 @@ Fuente: especificación maestra NEXUS AI v1.0. Primero F0–F3, Python desde F4.
 | F1 Seguridad y catálogos | Núcleo validado | Sesiones/CSRF, cuatro roles, cuentas demo y catálogos |
 | F2 Operación | Implementada | Stock trazable, venta atómica, concurrencia, reintento idempotente y anulación única |
 | F3 Reportería | Implementada | Indicadores, fechas Lima, evolución, categorías y top 5 desde SQL |
-| F4 IA | Siguiente | FastAPI, baseline, pronóstico, MAE y tolerancia a fallos |
+| F4 Analítica | Implementada | FastAPI, referencia semanal/Ridge, MAE temporal, reglas y snapshots reproducibles |
 | F5 Entrega | Parcial | E2E principal disponible; faltan carga, auditoría completa y caso de estudio |
 | F6 Opcionales | Fuera de esta entrega | Tareas, eventos, CSV/PDF y asistente local |
 
@@ -37,7 +37,7 @@ Fuente: especificación maestra NEXUS AI v1.0. Primero F0–F3, Python desde F4.
 
 ## Pendientes reales
 
-- F4: Python y pronósticos; no hay funciones de IA disponibles todavía.
+- No hay chatbot ni LLM. La IA disponible es la regresión clásica, con baseline conservador.
 - Administración de usuarios: editar roles, desactivar cuentas y recuperar
   contraseñas, con invalidación o actualización de sesiones afectadas.
 - Windows/Git Bash y Compose local: ejecución manual pendiente.
@@ -45,3 +45,18 @@ Fuente: especificación maestra NEXUS AI v1.0. Primero F0–F3, Python desde F4.
   de Chromium no sustituye esas verificaciones.
 
 Evidencia ejecutada: [VALIDACION.md](VALIDACION.md).
+
+## Criterios de F4
+
+- Java agrega ventas confirmadas por fecha de Lima y unidades por producto; no
+  comparte datos de clientes, usuarios, sesiones o conexión. Python no accede a BD.
+- Solo se usan días completos. Ventanas de 1–366 días; pronóstico 1–14. No se
+  fabrica historia a partir de ceros previos a la primera venta observada.
+- Mínimo 84 días y 28 con ventas. Baseline semanal frente a Ridge; mejora mínima
+  10% en selección y confirmación, ambos bloques participan en la decisión.
+- Fecha de generación, método/versión, períodos, MAE y advertencias visibles.
+  Sin intervalos de confianza ficticios ni garantía de demanda.
+- Reglas de anomalía y reposición explícitas, sin mutaciones automáticas.
+- Experimentos con snapshots inmutables y huella de datos. Consulta de últimos
+  10 y detalle por UUID sin recalcular ni depender de Python.
+- Timeout recuperable; pruebas de venta real después de un fallo de analítica.

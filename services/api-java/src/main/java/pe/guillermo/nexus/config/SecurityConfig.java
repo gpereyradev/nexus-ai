@@ -24,6 +24,8 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(a -> a
                 .requestMatchers(HttpMethod.GET, "/api/v1/health", "/api/v1/auth/csrf").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/analytics/runs", "/api/v1/analytics/runs/*").hasAnyRole("ADMIN", "MANAGER", "ANALYST")
+                .requestMatchers(HttpMethod.POST, "/api/v1/analytics/forecast").hasAnyRole("ADMIN", "MANAGER", "ANALYST")
                 .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/summary").authenticated()
                 .requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/v1/sales/*/cancel").hasRole("ADMIN")

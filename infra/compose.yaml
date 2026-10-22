@@ -31,11 +31,26 @@ services:
       DEMO_MANAGER_PASSWORD: ${DEMO_MANAGER_PASSWORD:-}
       DEMO_ANALYST_PASSWORD: ${DEMO_ANALYST_PASSWORD:-}
       DEMO_VIEWER_PASSWORD: ${DEMO_VIEWER_PASSWORD:-}
+      ANALYTICS_ENABLED: ${ANALYTICS_ENABLED:-false}
+      ANALYTICS_URL: http://analytics:8001
+      ANALYTICS_API_KEY: ${ANALYTICS_API_KEY:-}
+      ANALYTICS_TIMEOUT_MS: ${ANALYTICS_TIMEOUT_MS:-8000}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
     ports:
       - "127.0.0.1:${API_PORT:-8080}:8080"
     depends_on:
       db:
         condition: service_healthy
+  analytics:
+    profiles: ["analytics"]
+    build: ../services/analytics-python
+    environment:
+      ANALYTICS_API_KEY: ${ANALYTICS_API_KEY:-}
+    expose: ["8001"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
 volumes:
   nexus_data:
