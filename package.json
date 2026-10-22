@@ -1,6 +1,6 @@
 {
   "name": "nexus-ai",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "workspaces": [
     "apps/web"
@@ -10,6 +10,7 @@
   },
   "scripts": {
     "setup": "node scripts/setup.mjs",
+    "accounts": "node --env-file=.env scripts/show-accounts.mjs",
     "dev": "npm run dev --workspace @nexus/web",
     "build": "npm run build --workspace @nexus/web",
     "typecheck": "npm run typecheck --workspace @nexus/web",

@@ -1,123 +1,152 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { login, logout, request, ApiError, type Account } from "./api/client";
 import { fetchHealth, type Health } from "./api/health";
-
-const phases = [
-  [
-    "F0",
-    "Fundación",
-    "Entorno, conexiones, migraciones y validación continua.",
-  ],
-  [
-    "F1",
-    "Seguridad y catálogos",
-    "Login, cuatro roles, productos, categorías y clientes.",
-  ],
-  [
-    "F2",
-    "Operación central",
-    "Inventario trazable, ventas atómicas y anulaciones.",
-  ],
-  ["F3", "Reportería", "Indicadores y gráficos calculados desde PostgreSQL."],
-  [
-    "F4",
-    "Inteligencia aplicada",
-    "Python, pronóstico, baseline y evaluación con MAE.",
-  ],
-  [
-    "F5",
-    "Entrega de portafolio",
-    "Pruebas completas, accesibilidad y recorrido de producto.",
-  ],
-];
-type Connection = {
-  state: "loading" | "offline" | "online";
-  health?: Health;
-  error?: string;
+import Catalog, { type Kind } from "./components/Catalog";
+import Users from "./components/Users";
+const roles = {
+  ADMIN: "Administrador",
+  MANAGER: "Gestor",
+  ANALYST: "Analista",
+  VIEWER: "Lector",
+};
+const titles: Record<string, string> = {
+  home: "Tu negocio, bien organizado.",
+  products: "Productos",
+  customers: "Clientes",
+  categories: "Categorías",
+  users: "Usuarios",
 };
 export default function App() {
-  const [view, setView] = useState<"environment" | "roadmap">("environment");
-  const [connection, setConnection] = useState<Connection>({
-    state: "loading",
-  });
-  const activeRequest = useRef<AbortController | null>(null);
-  async function refresh() {
-    activeRequest.current?.abort();
-    const controller = new AbortController();
-    activeRequest.current = controller;
-    setConnection({ state: "loading" });
-    const timeout = setTimeout(() => controller.abort("timeout"), 8000);
-    try {
-      const health = await fetchHealth(controller.signal);
-      if (activeRequest.current === controller)
-        setConnection({ state: "online", health });
-    } catch (error) {
-      if (activeRequest.current !== controller) return;
-      setConnection({
-        state: "offline",
-        error: controller.signal.aborted
-          ? "La consulta superó 8 segundos. Revisa el backend y vuelve a comprobar."
-          : error instanceof Error && !error.message.includes("fetch")
-            ? error.message
-            : "No se pudo conectar con Java. Inicia la base de datos y ejecuta npm run api.",
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
+  const [account, setAccount] = useState<Account | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [notice, setNotice] = useState("");
+  const [query, setQuery] = useState(window.location.search);
+  const params = new URLSearchParams(query);
+  const selected = params.get("view") || "home";
+  const view =
+    titles[selected] && !(selected === "users" && account?.role !== "ADMIN")
+      ? selected
+      : "home";
   useEffect(() => {
-    void refresh();
+    const controller = new AbortController();
+    request<Account>("/me", { signal: controller.signal })
+      .then(setAccount)
+      .catch((e) => {
+        if (
+          !controller.signal.aborted &&
+          (!(e instanceof ApiError) || e.status !== 401)
+        )
+          setNotice(e.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setChecking(false);
+      });
+    const expired = () => {
+      setAccount(null);
+      setNotice("Tu sesión terminó. Vuelve a ingresar.");
+    };
+    const pop = () => setQuery(window.location.search);
+    window.addEventListener("nexus:session-expired", expired);
+    window.addEventListener("popstate", pop);
     return () => {
-      activeRequest.current?.abort();
-      activeRequest.current = null;
+      controller.abort();
+      window.removeEventListener("nexus:session-expired", expired);
+      window.removeEventListener("popstate", pop);
     };
   }, []);
-  const online = connection.state === "online";
+  function change(changes: Record<string, string>, reset = false) {
+    const next = reset
+      ? new URLSearchParams()
+      : new URLSearchParams(window.location.search);
+    for (const [k, v] of Object.entries(changes)) {
+      if (v) next.set(k, v);
+      else next.delete(k);
+    }
+    const search = next.toString();
+    window.history.pushState(
+      {},
+      "",
+      window.location.pathname + (search ? "?" + search : ""),
+    );
+    setQuery(window.location.search);
+  }
+  async function leave() {
+    try {
+      await logout();
+      setAccount(null);
+      setNotice("Sesión cerrada correctamente.");
+      change({}, true);
+    } catch (e) {
+      setNotice(
+        e instanceof Error
+          ? e.message
+          : "No se pudo cerrar la sesión. Intenta nuevamente.",
+      );
+    }
+  }
+  if (checking)
+    return (
+      <main className="app-loading" role="status">
+        Conectando con NEXUS AI…
+      </main>
+    );
+  if (!account)
+    return (
+      <Login
+        notice={notice}
+        onLogin={(u) => {
+          setAccount(u);
+          setNotice("");
+        }}
+      />
+    );
+  const canEdit = account.role === "ADMIN" || account.role === "MANAGER";
+  const nav = [
+    ["home", "Inicio", "◫"],
+    ["products", "Productos", "▦"],
+    ["customers", "Clientes", "◎"],
+    ["categories", "Categorías", "▤"],
+    ...(account.role === "ADMIN" ? [["users", "Usuarios", "◇"]] : []),
+  ];
   return (
     <div className="layout">
       <aside className="sidebar">
-        <a
-          className="brand"
-          href="#main"
-          aria-label="Nexus AI, ir al contenido"
-        >
-          <span className="brand-mark">N</span>
-          <span>
-            NEXUS<span className="brand-ai"> AI</span>
-            <small>BUSINESS WORKSPACE</small>
-          </span>
-        </a>
+        <Brand />
         <div className="workspace">
-          <span className="workspace-icon">GP</span>
+          <span className="workspace-icon">
+            {account.displayName.slice(0, 2).toUpperCase()}
+          </span>
           <div>
-            Guillermo Pereyra<small>Proyecto de portafolio</small>
+            {account.displayName}
+            <small>{roles[account.role]}</small>
           </div>
         </div>
         <p className="nav-label">ESPACIO DE TRABAJO</p>
         <nav aria-label="Navegación principal">
-          <button
-            className={view === "environment" ? "active" : ""}
-            onClick={() => setView("environment")}
-            aria-current={view === "environment" ? "page" : undefined}
-          >
-            <span aria-hidden="true">◫</span> Entorno del proyecto
-          </button>
-          <button
-            className={view === "roadmap" ? "active" : ""}
-            onClick={() => setView("roadmap")}
-            aria-current={view === "roadmap" ? "page" : undefined}
-          >
-            <span aria-hidden="true">↗</span> Plan de trabajo
-          </button>
+          {nav.map(([id, title, icon]) => (
+            <button
+              key={id}
+              className={view === id ? "active" : ""}
+              aria-current={view === id ? "page" : undefined}
+              onClick={() => change({ view: id }, true)}
+            >
+              <span aria-hidden="true">{icon}</span>
+              {title}
+            </button>
+          ))}
         </nav>
         <div className="sidebar-note">
-          <span className="small-dot" /> DESARROLLO LOCAL
+          <span className="small-dot" /> DEMOSTRACIÓN LOCAL
           <p>
-            Una base sólida.
+            Datos ordenados.
             <br />
-            Un módulo a la vez.
+            Decisiones con base.
           </p>
-          <small>v0.1.0 · Fundación</small>
+          <small>v0.2.0 · Seguridad y catálogos</small>
         </div>
+        <button className="logout-button" onClick={() => void leave()}>
+          Cerrar sesión ↗
+        </button>
         <footer className="sidebar-footer">
           Ingeniería de Software con IA
         </footer>
@@ -125,241 +154,288 @@ export default function App() {
       <div className="content">
         <header className="topbar">
           <span>
-            Workspace <span className="slash">/</span>{" "}
-            <strong>{view === "environment" ? "Entorno" : "Roadmap"}</strong>
+            NEXUS AI <span className="slash">/</span>
+            <strong>{view === "home" ? "Inicio" : titles[view]}</strong>
           </span>
           <span className="local-label">
-            <span className="small-dot" /> LOCAL · PEN · LIMA
+            {roles[account.role]} · PEN · LIMA
           </span>
         </header>
         <main id="main">
           <div className="page-heading">
             <div>
-              <p className="eyebrow">NEXUS AI / FASE 00</p>
-              <h1>
-                {view === "environment"
-                  ? "Todo empieza con una buena base."
-                  : "Del primer commit al producto."}
-              </h1>
+              <p className="eyebrow">GESTIÓN EMPRESARIAL / FASE 01</p>
+              <h1>{titles[view]}</h1>
               <p className="subtitle">
-                {view === "environment"
-                  ? "Comprueba tu entorno y prepara el siguiente paso del proyecto."
-                  : "Cada fase tiene una salida verificable antes de avanzar."}
+                {view === "home"
+                  ? `Bienvenido, ${account.displayName}.`
+                  : "Información persistida en PostgreSQL y permisos comprobados por la API."}
               </p>
             </div>
-            <span className="version">v0.1.0</span>
+            <span className="version">v0.2.0</span>
           </div>
-          {view === "environment" ? (
-            <>
-              <section className="hero" aria-labelledby="foundation-title">
-                <div className="hero-copy">
-                  <span className="pill">F0 · FUNDACIÓN</span>
-                  <h2 id="foundation-title">
-                    Conectar hoy.
-                    <br />
-                    Construir sobre seguro.
-                  </h2>
-                  <p>
-                    La estructura está lista. El primer objetivo es conectar
-                    React, Java y PostgreSQL en tu equipo.
-                  </p>
-                  <a href="#startup" className="primary-link">
-                    Ver guía de arranque <span aria-hidden="true">↗</span>
-                  </a>
-                </div>
-                <div
-                  className="architecture"
-                  aria-label="Arquitectura: React consume Java, Java se conecta a PostgreSQL. Python se añadirá en F4."
-                >
-                  <div>
-                    <span>01</span> React + TypeScript <b>WEB</b>
-                  </div>
-                  <i aria-hidden="true">↓ API REST</i>
-                  <div>
-                    <span>02</span> Java + Spring Boot <b>API</b>
-                  </div>
-                  <i aria-hidden="true">↓ PERSISTENCIA</i>
-                  <div>
-                    <span>03</span> PostgreSQL <b>DATA</b>
-                  </div>
-                  <p>+ Python / analítica · F4</p>
-                </div>
-              </section>
-              <section aria-labelledby="services-title">
-                <div className="section-heading">
-                  <div>
-                    <h2 id="services-title">Estado de los servicios</h2>
-                    <p>
-                      Las conexiones se consultan al backend; no hay indicadores
-                      simulados.
-                    </p>
-                  </div>
-                  <button
-                    className="secondary"
-                    onClick={() => void refresh()}
-                    disabled={connection.state === "loading"}
-                  >
-                    {connection.state === "loading"
-                      ? "Comprobando…"
-                      : "↻ Comprobar"}
-                  </button>
-                </div>
-                <div className="services">
-                  <Service
-                    letter="R"
-                    name="Frontend"
-                    tech="React + TypeScript"
-                    status="En ejecución"
-                    ok
-                  />
-                  <Service
-                    letter="J"
-                    name="API principal"
-                    tech="Java · Spring Boot"
-                    status={
-                      connection.state === "loading"
-                        ? "Comprobando"
-                        : online
-                          ? "Conectada"
-                          : "Sin conexión"
-                    }
-                    ok={online}
-                  />
-                  <Service
-                    letter="P"
-                    name="Base de datos"
-                    tech="PostgreSQL · Flyway"
-                    status={
-                      connection.state === "loading"
-                        ? "Comprobando"
-                        : online
-                          ? "Verificada por Java"
-                          : "No comprobada"
-                    }
-                    ok={online}
-                  />
-                </div>
-                <div
-                  className={`connection-message ${online ? "success" : ""}`}
-                  role="status"
-                  aria-live="polite"
-                >
-                  {connection.state === "loading"
-                    ? "Consultando /api/v1/health…"
-                    : online
-                      ? `API ${connection.health?.version} y base de datos disponibles. Última comprobación: ${new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(connection.health!.checkedAt))} (Lima).`
-                      : connection.error}
-                </div>
-              </section>
-              <div className="bottom-grid">
-                <section id="startup" className="panel">
-                  <p className="eyebrow">PRIMER ARRANQUE</p>
-                  <h2>Tu entorno en tres pasos</h2>
-                  <ol className="steps">
-                    <li>
-                      <span>01</span>
-                      <div>
-                        <strong>Instala y configura</strong>
-                        <code>npm install</code>
-                        <code>npm run setup</code>
-                      </div>
-                    </li>
-                    <li>
-                      <span>02</span>
-                      <div>
-                        <strong>Inicia PostgreSQL y Java</strong>
-                        <p>
-                          Sigue README.md para elegir Docker o instalación
-                          manual.
-                        </p>
-                        <code>npm run api</code>
-                      </div>
-                    </li>
-                    <li>
-                      <span>03</span>
-                      <div>
-                        <strong>Abre el frontend</strong>
-                        <code>npm run dev</code>
-                        <p>Vuelve a comprobar la conexión en esta pantalla.</p>
-                      </div>
-                    </li>
-                  </ol>
-                </section>
-                <section className="panel next-panel">
-                  <p className="eyebrow">SIGUIENTE OBJETIVO</p>
-                  <span className="phase-number">01</span>
-                  <h2>Seguridad y catálogos</h2>
-                  <p>
-                    Implementaremos autenticación, permisos y los primeros datos
-                    del negocio.
-                  </p>
-                  <ul>
-                    <li>Usuarios y cuatro roles</li>
-                    <li>Productos y categorías</li>
-                    <li>Clientes con validación</li>
-                  </ul>
-                  <button
-                    className="text-button"
-                    onClick={() => setView("roadmap")}
-                  >
-                    Explorar el plan de trabajo ↗
-                  </button>
-                </section>
-              </div>
-            </>
+          {notice && (
+            <p className="connection-message" role="status">
+              {notice}
+            </p>
+          )}
+          {view === "home" ? (
+            <Home navigate={(id) => change({ view: id }, true)} />
+          ) : view === "users" ? (
+            <Users />
           ) : (
-            <section className="roadmap" aria-label="Fases del proyecto">
-              {phases.map(([code, title, description], i) => (
-                <article className="phase-card" key={code}>
-                  <span className="phase-code">{code}</span>
-                  <div>
-                    <span className="phase-label">
-                      {i === 0 ? "EN VALIDACIÓN LOCAL" : "PENDIENTE"}
-                    </span>
-                    <h2>{title}</h2>
-                    <p>{description}</p>
-                  </div>
-                  <span className="phase-order">0{i}</span>
-                </article>
-              ))}
-              <p className="scope-note">
-                Ventas, login, dashboard e IA todavía no están implementados en
-                esta entrega. Consulta docs/ROADMAP.md para los criterios de
-                aceptación.
-              </p>
-            </section>
+            <Catalog
+              key={view}
+              kind={view as Kind}
+              canEdit={canEdit}
+              params={params}
+              onParams={(changes) => change(changes)}
+            />
           )}
           <footer className="page-footer">
             <span>NEXUS AI · Guillermo Pereyra</span>
-            <span>Datos ficticios · Sin servicios de pago</span>
+            <span>Demostración local · Sin cobros reales</span>
           </footer>
         </main>
       </div>
     </div>
   );
 }
-function Service({
-  letter,
-  name,
-  tech,
-  status,
-  ok,
-}: {
-  letter: string;
-  name: string;
-  tech: string;
-  status: string;
-  ok: boolean;
-}) {
+function Brand() {
   return (
-    <article className="service">
-      <span className="service-letter">{letter}</span>
-      <h3>{name}</h3>
-      <p>{tech}</p>
-      <span className={`service-status ${ok ? "is-up" : ""}`}>
-        <span className="small-dot" />
-        {status}
+    <a className="brand" href="#main" aria-label="Nexus AI">
+      <span className="brand-mark">N</span>
+      <span>
+        NEXUS<span className="brand-ai"> AI</span>
+        <small>BUSINESS WORKSPACE</small>
       </span>
-    </article>
+    </a>
+  );
+}
+function Login({
+  notice,
+  onLogin,
+}: {
+  notice: string;
+  onLogin: (u: Account) => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [environment, setEnvironment] = useState(false);
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      onLogin(await login(email.trim(), password));
+      setPassword("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo ingresar.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="login-layout">
+      <section className="login-story">
+        <Brand />
+        <div>
+          <p className="eyebrow">NEXUS AI / BUSINESS WORKSPACE</p>
+          <h1>
+            Todo en su lugar.
+            <br />
+            Desde el primer día.
+          </h1>
+          <p>
+            Productos, categorías y clientes conectados en un solo espacio, con
+            acceso según tu rol.
+          </p>
+          <div className="login-tags">
+            <span>React + TypeScript</span>
+            <span>Java + Spring Boot</span>
+            <span>PostgreSQL</span>
+          </div>
+        </div>
+        <small>Guillermo Pereyra · Ingeniería de Software con IA</small>
+      </section>
+      <main id="main" className="login-main">
+        <div className="login-card">
+          <p className="eyebrow">BIENVENIDO A NEXUS</p>
+          <h2>Entra a tu espacio</h2>
+          <p className="subtitle">
+            Usa una cuenta local creada para esta demostración.
+          </p>
+          {notice && (
+            <p className="connection-message" role="status">
+              {notice}
+            </p>
+          )}
+          <form onSubmit={(e) => void submit(e)} className="editor-form">
+            <fieldset disabled={busy}>
+              <label>
+                Correo
+                <input
+                  type="email"
+                  required
+                  autoComplete="username"
+                  maxLength={254}
+                  placeholder="admin@nexus.demo"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </label>
+              <label>
+                Contraseña
+                <input
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </label>
+              {error && (
+                <p className="connection-message" role="alert">
+                  {error}
+                </p>
+              )}
+              <button className="action login-submit" type="submit">
+                {busy ? "Ingresando…" : "Ingresar al espacio ↗"}
+              </button>
+            </fieldset>
+          </form>
+          <details className="demo-help">
+            <summary>¿Cómo obtengo una cuenta de demostración?</summary>
+            <p>
+              Después de configurar e iniciar Java, ejecuta{" "}
+              <code>npm run accounts</code> en tu equipo para consultar tus
+              credenciales locales. No las publiques.
+            </p>
+          </details>
+          <button
+            className="text-button"
+            onClick={() => setEnvironment((x) => !x)}
+          >
+            {environment
+              ? "Ocultar estado del entorno"
+              : "Comprobar estado del entorno"}
+          </button>
+          {environment && <Environment />}
+          <p className="login-footnote">
+            v0.2.0 · Entorno local · Datos ficticios
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
+function Home({ navigate }: { navigate: (id: string) => void }) {
+  return (
+    <>
+      <section className="hero">
+        <div className="hero-copy">
+          <span className="pill">F1 · SEGURIDAD Y CATÁLOGOS</span>
+          <h2>
+            Una base ordenada
+            <br />
+            para lo que viene.
+          </h2>
+          <p>
+            Empieza con tus productos y clientes. Cada cambio se valida y se
+            guarda en la base de datos.
+          </p>
+          <button className="action" onClick={() => navigate("products")}>
+            Explorar productos ↗
+          </button>
+        </div>
+        <div className="architecture">
+          <div>
+            <span>01</span> Usuarios y permisos <b>ACCESO</b>
+          </div>
+          <i aria-hidden="true">↓</i>
+          <div>
+            <span>02</span> Productos y categorías <b>CATÁLOGO</b>
+          </div>
+          <i aria-hidden="true">↓</i>
+          <div>
+            <span>03</span> Clientes <b>RELACIÓN</b>
+          </div>
+        </div>
+      </section>
+      <div className="bottom-grid">
+        <section className="panel">
+          <p className="eyebrow">CONEXIÓN DEL SISTEMA</p>
+          <h2>Estado del entorno</h2>
+          <Environment />
+        </section>
+        <section className="panel next-panel">
+          <p className="eyebrow">SIGUIENTE FASE</p>
+          <span className="phase-number">02</span>
+          <h2>Inventario y ventas</h2>
+          <p>
+            El próximo módulo incorporará movimientos trazables, ventas y
+            anulaciones. Aún no está implementado.
+          </p>
+          <ul>
+            <li>Control de existencias</li>
+            <li>Ventas en una transacción</li>
+            <li>Protección ante operaciones simultáneas</li>
+          </ul>
+        </section>
+      </div>
+    </>
+  );
+}
+function Environment() {
+  const [health, setHealth] = useState<Health | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    setLoading(true);
+    setError("");
+    setHealth(null);
+    fetchHealth(controller.signal)
+      .then(setHealth)
+      .catch((e) =>
+        setError(
+          controller.signal.aborted
+            ? "No se pudo verificar la conexión. Comprueba Java y PostgreSQL."
+            : e.message,
+        ),
+      )
+      .finally(() => {
+        setLoading(false);
+        clearTimeout(timer);
+      });
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [attempt]);
+  return (
+    <div className="environment">
+      <p
+        role="status"
+        className={`connection-message ${health ? "success" : ""}`}
+      >
+        {loading
+          ? "Comprobando servicios…"
+          : health
+            ? `API ${health.version} y PostgreSQL conectados. Moneda PEN · Hora de referencia Lima.`
+            : error}
+      </p>
+      <button
+        className="secondary"
+        disabled={loading}
+        onClick={() => setAttempt((x) => x + 1)}
+      >
+        Comprobar conexión
+      </button>
+    </div>
   );
 }
