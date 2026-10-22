@@ -36,6 +36,9 @@ test("venta real: catálogo, ingreso, venta, reporte, anulación y trazabilidad"
     .getByLabel("Nombre", { exact: true })
     .fill("Producto recorrido completo");
   await editor.getByLabel("SKU", { exact: true }).fill(sku);
+  await editor
+    .getByLabel("Categoría", { exact: true })
+    .selectOption("10000000-0000-0000-0000-000000000001");
   await editor.getByLabel("Costo (S/)", { exact: true }).fill("10.00");
   await editor.getByLabel("Precio (S/)", { exact: true }).fill("19.90");
   await editor.getByRole("button", { name: "Guardar", exact: true }).click();
@@ -129,7 +132,7 @@ test("lector: reportes y navegación móvil con escrituras denegadas en la API",
     0,
   );
   await expect(
-    page.getByRole("button", { name: "Ver detalle" }).first(),
+    page.getByRole("button", { name: /^Ver venta / }).first(),
   ).toBeVisible();
   const csrf = await page.request.get("/api/v1/auth/csrf");
   const token = await csrf.json();

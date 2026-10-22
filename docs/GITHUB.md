@@ -51,7 +51,7 @@ ejecutaremos las pruebas del módulo. Desde una copia limpia actualizada:
 
 ```bash
 git pull --ff-only
-git switch -c feat/f1-auth-catalogs
+git switch -c feat/f4-analytics
 ```
 
 Después de implementar y verificar:
@@ -59,8 +59,8 @@ Después de implementar y verificar:
 ```bash
 git add .
 git diff --cached --stat
-git commit -m "feat: add authentication and catalogs"
-git push -u origin feat/f1-auth-catalogs
+git commit -m "feat: add analytics baseline"
+git push -u origin feat/f4-analytics
 ```
 
 La rama se revisa y se integra en `main`. No reemplaces una carpeta que

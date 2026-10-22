@@ -2,6 +2,10 @@
 
 Estado: adoptada para 0.1.0. Fecha: 22 de octubre de 2026.
 
+Documento histórico de la fundación. La arquitectura vigente incorpora
+[ADR-002](ADR-002-sessions-and-catalogs.md) y
+[ADR-003](ADR-003-inventory-sales-reporting.md).
+
 El proyecto debe demostrar ingeniería full stack con presupuesto externo S/0.
 Se adopta un monorepo: React/TypeScript, un monolito modular Java y PostgreSQL.
 Python tendrá una frontera separada solo desde F4. No se añade un servidor de

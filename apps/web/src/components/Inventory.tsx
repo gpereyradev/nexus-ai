@@ -35,6 +35,7 @@ export default function Inventory({
     const search = new URLSearchParams(filters);
     search.delete("view");
     setLoading(true);
+    setData(null);
     setError("");
     Promise.all([
       request<Page<InventoryRow>>("/inventory?" + search, {
@@ -374,6 +375,7 @@ function History({ row, onClose }: { row: InventoryRow; onClose: () => void }) {
     if (from) query.set("from", from);
     if (to) query.set("to", to);
     setLoading(true);
+    setData(null);
     setError("");
     request<Page<Movement>>("/inventory/movements?" + query, {
       signal: controller.signal,

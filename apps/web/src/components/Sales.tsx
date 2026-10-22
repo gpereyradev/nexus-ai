@@ -40,6 +40,7 @@ export default function Sales({
     const search = new URLSearchParams(filters);
     search.delete("view");
     setLoading(true);
+    setData(null);
     setError("");
     request<Page<SaleSummary>>("/sales?" + search, {
       signal: controller.signal,

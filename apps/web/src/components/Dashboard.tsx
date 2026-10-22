@@ -44,6 +44,7 @@ export default function Dashboard({
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
+    setData(null);
     setError("");
     request<Summary>("/dashboard/summary?" + new URLSearchParams(period), {
       signal: controller.signal,
@@ -57,7 +58,8 @@ export default function Dashboard({
       });
     return () => controller.abort();
   }, [period, revision]);
-  const max = Math.max(1, ...(data?.daily.map((d) => Number(d.total)) || []));
+  const peak = Math.max(0, ...(data?.daily.map((d) => Number(d.total)) || []));
+  const max = Math.max(1, peak);
   const points =
     data?.daily
       .map(
@@ -190,7 +192,7 @@ export default function Dashboard({
                 <span className="pill">PEN · LIMA</span>
               </div>
               <div className="chart-labels">
-                <span>{currency(max)}</span>
+                <span>{currency(peak)}</span>
                 <span>Máximo diario</span>
               </div>
               <svg

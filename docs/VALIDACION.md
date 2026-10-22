@@ -1,72 +1,90 @@
-# Validación · 0.2.0
+# Validación · 0.3.0
 
-Fecha: 22 de octubre de 2026. No se atribuyen pruebas de Windows ni de Compose
-local a los resultados obtenidos en GitHub Actions.
+Fecha: 22 de octubre de 2026. Se distingue ejecución en Linux/CI de arranque
+Windows o Compose local. No se activaron pagos, hosting ni APIs facturables.
 
-## Evidencia de la fundación
+## Evidencia de F2/F3
 
-[Run 39738272579](https://github.com/gpereyradev/nexus-ai/actions/runs/39738272579),
-commit 41b54a6, terminó con web y api aprobados. Sus logs muestran Java conectado
-a PostgreSQL 17.11, V1/V2 aplicadas, una segunda migración sin cambios, HTTP real,
-4 pruebas Java, 3 de integración y build JAR correctos. F0 ya no está bloqueada
-por la falta de PostgreSQL en el entorno de preparación.
+[Run 39747149296](https://github.com/gpereyradev/nexus-ai/actions/runs/39747149296),
+commit `0dc933b`, aprobó los jobs web y API con PostgreSQL 17.11 real:
 
-## Evidencia de F1
+| Suite | Pruebas aprobadas |
+|---|---:|
+| Web: contrato de salud y cliente de sesión/CSRF | 10 |
+| Java: salud, rate limit y reglas exactas de venta | 9 |
+| FoundationIT | 3 |
+| AuthCatalogIT | 13 |
+| OperationsIT | 16 |
+| DemoDatasetIT | 1 |
+| DashboardIT | 3 |
+| Total sin E2E | 55 |
 
-[Primera validación F1](https://github.com/gpereyradev/nexus-ai/actions/runs/39740808315),
-commit cf277bd, aprobó web y api: 10 pruebas web, 5 unitarias/MVC Java y 14 de
-integración contra PostgreSQL. V3 se aplicó correctamente. El flujo de login,
-rotación de sesión, CSRF obsoleto, logout y rechazo de la cookie invalidada se
-probó por HTTP real. Las pruebas de catálogos usan MockMvc con JPA y PostgreSQL
-reales y revierten sus cambios al terminar.
+La validación E2E del mismo workflow está en revisión; no se declara aprobada
+hasta comprobar sus logs. El estado de cada commit se consulta en
+[Actions de la rama](https://github.com/gpereyradev/nexus-ai/actions?query=branch%3Afeat%2Ff2-inventory-sales).
+Un resultado de un commit anterior no sustituye la revisión posterior.
 
-[Validación ampliada F1](https://github.com/gpereyradev/nexus-ai/actions/runs/39741657057),
-commit 6fca270, aprobó ambos jobs. Resultado: 10 pruebas web, 5 unitarias/MVC
-Java y 16 de integración PostgreSQL, todas sin fallos: **31 pruebas en total**.
-Incluye bootstrap demo idempotente sin sobrescribir hashes, categorías
-inactivas/duplicadas y alta de usuarios restringida a administrador.
+## Casos relevantes probados con PostgreSQL
 
-El estado exacto de la última revisión se consulta en
-[Actions de la rama](https://github.com/gpereyradev/nexus-ai/actions?query=branch%3Afeat%2Ff1-auth-catalogs)
-y los checks del PR. Un resultado de un commit anterior no sustituye la
-validación del código posterior.
+- V1–V4 aplicadas y segunda ejecución de Flyway sin cambios.
+- Login real, rotación de sesión/CSRF, logout y rechazo de cookie invalidada.
+- Roles, escrituras sin CSRF, categorías inactivas, valores inválidos y edición
+  obsoleta; cuentas demo idempotentes sin sobrescribir hashes.
+- Importes exactos y precios del servidor aunque el cliente envíe otro precio.
+- Snapshots de líneas y cliente persistidos, incluso al renombrar un producto.
+- Fallo en una línea revierte cabecera, líneas y movimientos completos.
+- Cantidades, saldo negativo, límite de enteros y de total decimal rechazados.
+- Reintento idéntico de venta/ajuste no duplica registros. Clave con datos
+  diferentes produce conflicto.
+- Dos ventas concurrentes no sobrevendieron stock; la misma clave simultánea
+  produjo una sola venta; orden inverso de líneas no produjo deadlock.
+- Anulación repetida y simultánea no duplicó reversiones; devuelve stock de un
+  producto inactivo y conserva las líneas originales.
+- UPDATE/DELETE de historial y saldo anterior inventado rechazados por la BD.
+- Búsqueda literal, paginación acotada y bordes de fechas en horario de Lima.
+- Seed repetido produce una sola carga, sin saldos negativos, con 30 productos,
+  20 clientes, 226 ventas, tres alertas iniciales y más de 90 días de historia.
+- Total de reportes coincide con SQL independiente; sumas diarias/categorías
+  coinciden, períodos vacíos dan cero y anulaciones se excluyen.
 
-## Comprobaciones locales ejecutadas
+## Comprobaciones locales
 
-- npm run typecheck: aprobado.
-- npm test: 10 pruebas aprobadas.
-- npm run build: bundle generado.
-- mvn test: 5 pruebas aprobadas y suites de integración compiladas.
-- git diff --check: sin errores de espacios.
-- Setup ejecutado dos veces: claves existentes conservadas; secretos fuera de Git.
-- Navegador: acceso válido/inválido, alta de producto, conflicto de edición,
-  alta de cliente, categorías, alta de usuario, logout y controles de lector.
-- Revisión visual en 1440 px y 390 px, sin errores JavaScript ni desbordamiento
-  horizontal del documento; tablas móviles tienen desplazamiento propio.
+TypeScript, 10 pruebas web, build de Vite, 9 pruebas Java y compilación de las
+suites de integración aprobados. `git diff --check` sin errores. OpenAPI YAML
+analizado y referencias locales resueltas. Setup conserva las claves existentes;
+credenciales fuera de Git.
 
-La revisión de navegador interceptó la API con fixtures controlados para
-comprobar estados y formularios. No equivale a E2E de React contra PostgreSQL.
-La integración Java/PostgreSQL sí se probó en CI por separado. Las capturas
-se usaron para revisión interna y no se publican como si fueran una demo real.
+Revisión visual con Chromium a 1440 px y 390 px: panel, inventario, formulario
+de movimiento y venta. Sin errores JavaScript ni desbordamiento horizontal del
+documento. Esta revisión visual usó fixtures de API controlados, distinta de
+la suite E2E real de GitHub. Sus capturas son internas, no evidencia de BD real.
 
-## Cobertura funcional relevante
+## Cómo repetir E2E
 
-- Solo ADMIN/MANAGER escriben catálogos. Todos los roles pueden leer.
-- Solo ADMIN lista y crea usuarios, incluso con llamadas API directas.
-- Login incorrecto, falta de CSRF y cookie de sesión cerrada se rechazan.
-- SKU duplicado, precio negativo, correo inválido y referencia inexistente.
-- Costos/precios persistidos; categoría legible mediante asociación JPA.
-- Conflicto de versión y preservación de la edición ya guardada.
-- Clientes desactivados siguen consultables con el filtro correspondiente.
-- Búsqueda literal de comodines y límites de tamaño/orden.
-- Las contraseñas nunca se devuelven en respuestas de cuentas.
+La configuración Playwright exige una BD aislada con nombre terminado en
+`_e2e`; crea registros. Arranca JAR y Vite en 18080/15173, sin reutilizar
+servidores existentes ni leer `.env`. Consulta [README](../README.md).
 
-## Pendiente
+La suite recorre alta de producto, ingreso de cinco unidades, venta de dos,
+descuento a tres, reporte +39.80, anulación, devolución a cinco, historial y
+reporte restaurado. Otro caso consulta en móvil como VIEWER y comprueba 403
+al intentar vender mediante la API con CSRF válido. No hay interceptación HTTP
+en esos casos y no se exportan trazas, vídeos ni capturas de sesiones.
 
-- Arranque local en Windows/Git Bash del usuario.
-- Build y ejecución del Compose de la aplicación.
-- E2E de navegador contra backend real, prueba de carga y auditoría exhaustiva.
-- Inventario, ventas, dashboard e IA: aún no implementados.
+## Evidencia anterior
+
+- [F0](https://github.com/gpereyradev/nexus-ai/actions/runs/39738272579): migraciones,
+  HTTP real, health, PostgreSQL y build JAR.
+- [F1](https://github.com/gpereyradev/nexus-ai/actions/runs/39741657057): 31 pruebas
+  de acceso, catálogos, bootstrap y permisos aprobadas.
+- [F2 inicial](https://github.com/gpereyradev/nexus-ai/actions/runs/39744797176):
+  51 pruebas antes de agregar el dataset y reportes.
+
+## Pendientes y límites
+
+- Windows/Git Bash y build/ejecución del Compose completo de la aplicación.
+- Carga, auditoría exhaustiva, accesibilidad completa y otros navegadores.
 - Edición de roles, desactivación de usuarios y recuperación de contraseña.
-
-No se activaron pagos, hosting, suscripciones ni APIs facturables.
+- Python/IA, importación, exportación y emisión tributaria sin implementar.
+- El dataset ficticio usa fechas fijas, no sustituye ventas recientes. El botón
+  «Ver período demo» permite consultarlo en cualquier fecha.

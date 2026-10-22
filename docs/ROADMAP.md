@@ -1,51 +1,47 @@
-# Roadmap y aceptación · 0.2.0
+# Roadmap y aceptación · 0.3.0
 
 Fuente: especificación maestra NEXUS AI v1.0. Primero F0–F3, Python desde F4.
 
 | Fase | Estado | Salida verificable |
 |---|---|---|
-| F0 Fundación | Validada en CI Linux | React, Java/PostgreSQL, migraciones repetibles, build y pruebas aprobados |
-| F1 Seguridad y catálogos | Núcleo implementado | Login/logout, cuatro roles, cuentas demo, productos, categorías, clientes, filtros y pruebas negativas |
-| F2 Operación | Siguiente módulo | Movimientos, stock, venta atómica, concurrencia y anulación única |
-| F3 Reportería | Pendiente | Indicadores/filtros coinciden con consultas SQL de control |
-| F4 IA | Pendiente | FastAPI, baseline, pronóstico, MAE, advertencias y tolerancia a fallos |
-| F5 Entrega | Pendiente | E2E del MVP, accesibilidad completa, hardening y caso de estudio |
-| F6 Opcionales | Fuera de esta entrega | Tareas, eventos, CSV/PDF y asistente local tras estabilizar el MVP |
+| F0 Fundación | Validada en CI Linux | React, Java/PostgreSQL, migraciones, build y pruebas |
+| F1 Seguridad y catálogos | Núcleo validado | Sesiones/CSRF, cuatro roles, cuentas demo y catálogos |
+| F2 Operación | Implementada | Stock trazable, venta atómica, concurrencia, reintento idempotente y anulación única |
+| F3 Reportería | Implementada | Indicadores, fechas Lima, evolución, categorías y top 5 desde SQL |
+| F4 IA | Siguiente | FastAPI, baseline, pronóstico, MAE y tolerancia a fallos |
+| F5 Entrega | Parcial | E2E principal disponible; faltan carga, auditoría completa y caso de estudio |
+| F6 Opcionales | Fuera de esta entrega | Tareas, eventos, CSV/PDF y asistente local |
 
-## RF cubiertos por F1
+## Criterios de operación
 
-- RF-01: acceso con contraseña hash, sesión y cierre que invalida la cookie.
-- RF-02: cuatro roles con autorización por endpoint y servicio de catálogos.
-- RF-03: cuentas demo opcionales e idempotentes; secretos locales aleatorios.
-- RF-06: productos con SKU único, importes no negativos, categoría y estado.
-- RF-07: búsqueda, filtros, orden y páginas; filtros en la URL.
-- RF-08: clientes con datos mínimos, correo opcional validado y estado.
-- Base para RF-10: desactivación lógica; todavía no hay historial de ventas.
+- El saldo deriva del historial; ingresos, ajustes, ventas y reversiones no se
+  editan ni eliminan. Cada movimiento guarda motivo, autor y saldos.
+- Una venta confirma todas sus líneas o ninguna; toma precios del catálogo y
+  no acepta totales del cliente como autoridad. Conserva snapshots históricos.
+- Dos ventas simultáneas no generan stock negativo. Los productos se bloquean
+  por UUID ordenado; el límite de espera devuelve conflicto recuperable.
+- Clave de solicitud por usuario para ventas y ajustes: repetir el mismo
+  contenido devuelve el registro anterior; cambiarlo con la misma clave da 409.
+- Solo ADMIN anula. Reintentos o anulaciones simultáneas no duplican devolución.
+- ADMIN/MANAGER operan; ANALYST/VIEWER consultan. CSRF en escrituras.
 
-No se marca el MVP completo. La matriz general de administración de usuarios
-se implementa inicialmente con alta/listado; edición de roles, desactivación
-de cuentas y reinicio de contraseñas quedan pendientes. La interfaz lo indica.
+## Criterios de reportes
 
-## Datos de demostración
+- Ventas confirmadas y ticket promedio, unidades y días vacíos explícitos.
+- Filtro inclusivo de fechas locales en Lima, máximo 366 días.
+- Totales diarios y por categoría suman el total independiente de SQL.
+- Anulaciones excluidas; detalle histórico retenido. Stock bajo refleja el
+  presente de productos activos y no el cierre histórico del período.
+- Dataset opcional de 30 productos, 20 clientes, 226 ventas (113 días),
+  452 líneas y 485 movimientos. Identificado como ficticio, con carga única.
 
-Hay 8 categorías de referencia y cuatro cuentas cuando se habilita el bootstrap.
-Productos y clientes empiezan vacíos y se crean desde la interfaz. El seed
-completo de 30 productos, 20 clientes y tres meses de ventas se añadirá cuando
-exista F2. No se inventan indicadores ni datos de ventas para rellenar pantallas.
+## Pendientes reales
 
-## Evidencias y pendientes
+- F4: Python y pronósticos; no hay funciones de IA disponibles todavía.
+- Administración de usuarios: editar roles, desactivar cuentas y recuperar
+  contraseñas, con invalidación o actualización de sesiones afectadas.
+- Windows/Git Bash y Compose local: ejecución manual pendiente.
+- Carga, auditoría exhaustiva y accesibilidad completa. La existencia de E2E
+  de Chromium no sustituye esas verificaciones.
 
-- F0-01 y F0-02: integración y CI inicial aprobados en el run 39738272579.
-- La rama de F1 ejecuta pruebas nuevas con PostgreSQL; ver docs/VALIDACION.md.
-- Compose de la aplicación sigue pendiente de ejecución manual, aunque CI usa
-  PostgreSQL en contenedor real. No confundir ambas comprobaciones.
-- Arranque en Windows y E2E de navegador contra backend real siguen pendientes.
-- Antes de F2: revisar/integrar el PR y confirmar arranque local de la versión.
-
-## Criterios de F2
-
-Crear movimientos trazables, mantener stock consistente y registrar ventas en
-una transacción. Dos ventas simultáneas no deben producir stock negativo.
-Una anulación debe revertir existencias exactamente una vez. El precio debe
-provenir del backend y no del navegador. Cada caso tendrá pruebas negativas
-y de concurrencia sobre PostgreSQL, además del recorrido de interfaz.
+Evidencia ejecutada: [VALIDACION.md](VALIDACION.md).
