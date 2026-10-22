@@ -13,6 +13,11 @@
   Neon. Leer docs/DESPLIEGUE.md. No afirmar publicado sin deploy/URL verificados.
 - El perfil public conserva cookie Secure y PostgreSQL verify-full. El bypass
   TLS de CI solo es para PostgreSQL aislado. No compartir secretos ni .env.
+- Demo pública: https://nexus-ai-gpereyradev.onrender.com/, servicio
+  srv-dbd4fi6i0phs73enb1p0 en Guillermo's workspace. Neon flat-fire-16237279,
+  branch br-late-voice-b75b3fer, base nexus. Solo datos ficticios. Actualizaciones
+  manuales después de CI; la instancia no está administrada por Blueprint.
+- Nunca ejecutar E2E que creen ventas o limpien tablas sobre la demo publicada.
 - No hay chatbot, LLM ni servicios de IA comerciales; no presentar reglas estadísticas como aprendizaje automático.
 - Próximos pendientes: usuarios, exportaciones, carga y accesibilidad.
 - V1–V5 ya fueron aplicadas en CI: son inmutables. Para cambios de esquema agrega V6.

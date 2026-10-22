@@ -13,6 +13,8 @@
 - CI de la imagen real con HTTPS, 512 MiB y recorridos completos de navegador.
 - Barra lateral desplazable en pantallas bajas para mantener accesible el
   cierre de sesión con todos los módulos visibles.
+- Demo publicada en Render Free + Neon Free y verificada por HTTPS: sesiones,
+  roles/CSRF, reportes, pronóstico real guardado y cierre de sesión.
 - Guía de publicación, actualización y persistencia. Estado y evidencia exactos
   en docs/VALIDACION.md; no confundir configuración con publicación completada.
 

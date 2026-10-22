@@ -3,6 +3,13 @@
 Plataforma de gestión empresarial con inteligencia artificial aplicada.
 Proyecto de portafolio de **Guillermo Pereyra · Ingeniería de Software con IA**.
 
+**Demo pública:** https://nexus-ai-gpereyradev.onrender.com/
+
+Acceso con cuenta de demostración; las contraseñas son privadas. El propietario
+puede consultarlas en el entorno del servicio de Render. No necesitas instalar
+Docker ni otros runtimes para usar el enlace. El plan gratuito puede tardar en
+iniciar después de un período sin uso.
+
 **Entrega 0.4.0: analítica y pronósticos locales.** Además de inventario,
 ventas y reportes, incluye Python/FastAPI y un modelo Ridge de scikit-learn
 comparado con una referencia semanal. Muestra MAE, períodos, alertas estadísticas,
@@ -13,7 +20,8 @@ La evidencia y sus límites están en [docs/VALIDACION.md](docs/VALIDACION.md).
 La versión **0.4.1** añade una imagen pública con web, Java y Python, Blueprint
 Render Free y PostgreSQL externo en Neon Free. Consulta
 [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md): preparar el repositorio no significa
-que ya exista una URL publicada y comprobada.
+publicar automáticamente. Esta demo ya fue publicada y comprobada el 22/10/2026;
+la evidencia está en [docs/VALIDACION.md](docs/VALIDACION.md).
 La especificación original se conserva en
 [docs/NEXUS_AI_Especificacion_Maestra.pdf](docs/NEXUS_AI_Especificacion_Maestra.pdf).
 

@@ -5,6 +5,32 @@ PostgreSQL. Los visitantes solo necesitan un navegador. No necesitan Docker,
 Node, Java ni Python. El repositorio preparado no implica que ya exista un
 servidor publicado: consultar el estado de Render y su URL real.
 
+## Publicación actual · 22/10/2026
+
+- URL: https://nexus-ai-gpereyradev.onrender.com/
+- Servicio `nexus-ai-gpereyradev`, plan **Free**, región Virginia, una instancia.
+- Deploy `dep-dbd4fimi0phs73enb40g`, commit operativo `7c0f8a6`, estado `live`.
+- Proyecto Neon exclusivo `nexus-ai-public`, PostgreSQL 17, plan Free.
+- Se creó el servicio mediante la integración de Render desde la URL pública
+  del repositorio. Sus variables están guardadas en Render; esta instancia
+  no está administrada por un Blueprint. `render.yaml` queda como plantilla
+  reproducible para una futura vinculación, sin crear otro servicio por error.
+- Las actualizaciones de esta instancia son manuales después de aprobar CI;
+  no se configuró OAuth del proveedor Git ni un deploy hook en GitHub.
+
+Para ingresar como propietario: `admin@nexus.demo`. Consultar el valor privado
+de `DEMO_ADMIN_PASSWORD` en **Environment** del servicio correcto:
+https://dashboard.render.com/web/srv-dbd4fi6i0phs73enb1p0
+
+Para analítica sin escrituras comerciales, usar `analyst@nexus.demo` con
+`DEMO_ANALYST_PASSWORD`. No usar las contraseñas del `.env` local: son distintas.
+Nunca copiar estos valores al README, a un issue o a una captura pública.
+
+La API de creación disponible no expone el campo HTTP health-check path; el
+servicio usa la sonda TCP predeterminada. Se comprobó `/api/v1/health` mediante
+HTTPS y desde la propia interfaz. El Blueprint sí declara esa ruta HTTP; puede
+configurarse también en **Settings > Health Checks** del servicio existente.
+
 ## Diseño y coste
 
 - Un Web Service **Free** de Render construye `infra/public/Dockerfile`.
@@ -69,7 +95,12 @@ la cuenta del rol necesario por un canal privado.
 
 ## Actualizaciones, persistencia y fallos
 
-Render está configurado para desplegar `main` cuando sus checks aprueben.
+El Blueprint configura el despliegue de `main` cuando sus checks aprueben,
+si el repositorio está conectado mediante el proveedor Git de Render.
+Los servicios creados desde la URL pública de Git requieren un despliegue
+manual: después de aprobar CI, usar «Manual Deploy > Deploy latest commit»
+o la operación equivalente de Render. Un push a GitHub por sí solo no
+publica esos cambios en esa modalidad.
 Actualizar el código no requiere reinstalar nada en el equipo de los visitantes.
 Los datos permanecen en Neon; el filesystem de Render es efímero. No guardar
 backups, archivos de usuario o la base dentro del contenedor.

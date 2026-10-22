@@ -50,8 +50,10 @@ Evidencia ejecutada: [VALIDACION.md](VALIDACION.md).
 
 - Imagen única y Blueprint gratuito preparados: [DESPLIEGUE.md](DESPLIEGUE.md).
 - Verificar la imagen construida, HTTPS, sesión Secure, roles y persistencia.
-- La publicación requiere cuentas conectadas de Render y Neon y un deploy
-  final exitoso. Registrar su URL solo después de comprobarla.
+- Publicación realizada y comprobada el 22/10/2026 en Render Free + Neon Free:
+  https://nexus-ai-gpereyradev.onrender.com/. Evidencia en VALIDACION.md.
+- La instancia publicada requiere deploy manual después de aprobar CI; el
+  Blueprint conserva la alternativa con proveedor Git conectado.
 - Mantener S/0: sin tarjetas, pruebas facturables ni ampliaciones automáticas.
 
 ## Criterios de F4

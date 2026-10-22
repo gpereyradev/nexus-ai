@@ -34,10 +34,38 @@ medido ni una prueba de carga. Se corrigió el scroll de la barra lateral despu�
 de que el primer intento detectara el cierre de sesión fuera del viewport.
 
 El proveedor usa CPU fraccionada, distinta del límite de 1 CPU de CI. No se
-afirma rendimiento público certificado. Se creó el proyecto exclusivo Neon Free
-con PostgreSQL 17; Render está preparado en Free. Queda pendiente guardar la
-conexión como secreto, publicar y comprobar la URL real del proveedor. La
-configuración y CI no sustituyen esa verificación pública.
+afirma rendimiento público certificado.
+
+## Publicación y comprobación real
+
+El 22/10/2026, Render confirmó `live` para el deploy
+`dep-dbd4fimi0phs73enb40g` del commit `7c0f8a6`, en el servicio Free
+`nexus-ai-gpereyradev`, Virginia. La URL pública es:
+https://nexus-ai-gpereyradev.onrender.com/
+
+La conexión directa a Neon mantiene `verify-full` y el almacén de certificados
+de Java. V1–V5 se aplicaron con éxito en la base nueva. Una consulta separada
+confirmó 30 productos, 20 clientes, 226 ventas y un único seed completado.
+
+La comprobación HTTP sobre la URL pública verificó:
+
+- Health 200, API 0.4.1 y PostgreSQL UP, HTML y dos recursos compilados JS/CSS.
+- Login ANALYST real, cookie Secure/HttpOnly/SameSite=Strict y sesión autenticada.
+- Panel del período demo con 226 órdenes y suma diaria igual al total.
+- Rechazo de API anónima, archivos internos, rutas desconocidas y usuarios por rol.
+- Rechazo de pronóstico sin CSRF y de analítica para VIEWER con CSRF válido.
+- Pronóstico real de Python de siete días, total de entrada igual al panel y
+  lectura posterior del snapshot original. Run `7aeabaf9-7a55-4200-a6cc-b0704b5450d6`.
+- Logout y rechazo de la sesión cerrada. No creó ventas ni modificó catálogos.
+
+El navegador remoto cargó la interfaz publicada y mostró «API 0.4.1 y
+PostgreSQL conectados». La prueba autenticada pública fue HTTP; la prueba
+autenticada de navegador sigue siendo la de CI con HTTPS y la imagen real.
+La sonda del proveedor es TCP: la operación MCP de creación no permite fijar
+`healthCheckPath`. El endpoint HTTP fue comprobado aparte; ver DESPLIEGUE.md.
+No se ejecutó carga ni se afirma disponibilidad continua. Ambos proveedores
+siguen en planes Free, con suspensión y cuotas. No hay autodeploy por push
+en esta instancia creada desde la URL pública del repo.
 
 ## Evidencia de F4
 
