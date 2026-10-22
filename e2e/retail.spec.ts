@@ -15,7 +15,9 @@ async function inventory(page: Page, sku: string, stock: number) {
     .click();
   await page.getByPlaceholder("Nombre o SKU").fill(sku);
   await page.getByRole("button", { name: "Buscar", exact: true }).click();
-  await expect(page.getByTestId("stock")).toHaveText(String(stock));
+  const row=page.getByRole("row").filter({hasText:sku});
+  await expect(row).toHaveCount(1);
+  await expect(row.getByTestId("stock")).toHaveText(String(stock));
 }
 test("venta real: catálogo, ingreso, venta, reporte, anulación y trazabilidad", async ({
   page,
@@ -151,6 +153,7 @@ test("lector: reportes y navegación móvil con escrituras denegadas en la API",
     data: { from: "2026-07-01", to: "2026-10-21", forecastHorizonDays: 7 },
   });
   expect(analysis.status()).toBe(403);
+  expect((await page.request.get("/api/v1/analytics/runs")).status()).toBe(403);
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await expect(
     page.getByRole("button", { name: "Ingresar al espacio" }),
@@ -207,4 +210,10 @@ test("análisis real de Python: pronóstico evaluado y estado de historial insuf
     page.getByRole("heading", { name: "Historial insuficiente", exact: true }),
   ).toBeVisible();
   await expect(page.getByTestId("forecast-total")).toHaveCount(0);
+  expect(result.runId).toMatch(/^[0-9a-f-]{36}$/);
+  const saved=await page.request.get('/api/v1/analytics/runs/'+result.runId);expect(saved.status()).toBe(200);expect((await saved.json()).predictions).toEqual(result.predictions);
+  await page.locator('.saved-analyses summary').click();
+  await page.getByRole('button',{name:'Abrir análisis '+result.runId,exact:true}).click();
+  await expect(page.getByTestId('forecast-total')).toBeVisible();
+  await expect(page.getByText('Estimación · 7 días',{exact:true})).toBeVisible();
 });

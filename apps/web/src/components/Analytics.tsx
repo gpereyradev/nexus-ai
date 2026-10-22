@@ -155,8 +155,7 @@ export default function Analytics() {
         <div>
           <h2>Estimaciones con evidencia</h2>
           <p>
-            Explora ventas, cambios inusuales y cobertura de inventario. Ningún
-            análisis modifica tus registros.
+            Explora ventas, cambios inusuales y cobertura de inventario. Los análisis guardan su evidencia sin modificar ventas ni existencias.
           </p>
         </div>
         <span className="pill">PYTHON · MODELO LOCAL</span>
