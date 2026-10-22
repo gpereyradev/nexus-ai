@@ -1170,3 +1170,13 @@ td code {
     text-align: right;
   }
 }
+.catalog-table.products {
+  min-width: 820px;
+}
+.catalog-table.customers {
+  min-width: 620px;
+}
+.catalog-table.products td:nth-child(4),
+.catalog-table.products td:nth-child(5) {
+  white-space: nowrap;
+}

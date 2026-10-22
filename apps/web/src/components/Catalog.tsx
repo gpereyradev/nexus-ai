@@ -110,7 +110,9 @@ export default function Catalog({
         <div>
           <h2>Catálogo de {labels[kind]}</h2>
           <p>
-            {data ? `${data.totalElements} registros · ` : ""}
+            {data
+              ? `${data.totalElements} ${data.totalElements === 1 ? "registro" : "registros"} · `
+              : ""}
             {canEdit
               ? "Crea, edita y conserva el historial."
               : "Tu rol tiene acceso de solo lectura."}
@@ -221,7 +223,7 @@ export default function Catalog({
       {!loading && data && (
         <>
           <div className="table-scroll">
-            <table>
+            <table className={`catalog-table ${kind}`}>
               <thead>
                 <tr>
                   {kind === "products" && <th>SKU</th>}
@@ -449,7 +451,7 @@ function Editor({
               {input("sku", "SKU", "text", {
                 required: true,
                 maxLength: 40,
-                pattern: "[A-Za-z0-9_-]+",
+                pattern: "[A-Za-z0-9_\\-]+",
               })}
               <label>
                 Categoría
@@ -503,7 +505,6 @@ function Editor({
               {input("email", "Correo (opcional)", "email", { maxLength: 254 })}
               {input("phone", "Teléfono (opcional)", "tel", {
                 maxLength: 30,
-                pattern: "[+()0-9 -]{6,30}",
               })}
             </>
           )}

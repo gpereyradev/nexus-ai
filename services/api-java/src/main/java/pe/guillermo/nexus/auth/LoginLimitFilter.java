@@ -27,6 +27,12 @@ public class LoginLimitFilter extends OncePerRequestFilter {
         return true;
     }
     @Override protected void doFilterInternal(HttpServletRequest req,HttpServletResponse res,FilterChain chain) throws ServletException,IOException {
+        if("POST".equals(req.getMethod()) && "/api/v1/auth/login".equals(req.getServletPath())) {
+            String password=req.getParameter("password"),email=req.getParameter("email");
+            if(password==null || email==null || email.length()>254 || password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>72) {
+                SecurityConfig.problem(res,401,"INVALID_CREDENTIALS");return;
+            }
+        }
         if("POST".equals(req.getMethod()) && "/api/v1/auth/login".equals(req.getServletPath()) && !allow(req.getRemoteAddr())) {
             res.setHeader("Retry-After","60");SecurityConfig.problem(res,429,"LOGIN_RATE_LIMIT");return;
         }

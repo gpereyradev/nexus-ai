@@ -141,7 +141,7 @@ function UserEditor({
             />
           </label>
           <label>
-            Contraseña temporal
+            Contraseña inicial
             <input
               type="password"
               minLength={12}

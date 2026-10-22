@@ -396,23 +396,28 @@ function Environment() {
   useEffect(() => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
+    let active = true;
     setLoading(true);
     setError("");
     setHealth(null);
     fetchHealth(controller.signal)
-      .then(setHealth)
-      .catch((e) =>
-        setError(
-          controller.signal.aborted
-            ? "No se pudo verificar la conexión. Comprueba Java y PostgreSQL."
-            : e.message,
-        ),
-      )
+      .then((value) => {
+        if (active) setHealth(value);
+      })
+      .catch((e) => {
+        if (active)
+          setError(
+            controller.signal.aborted
+              ? "No se pudo verificar la conexión. Comprueba Java y PostgreSQL."
+              : e.message,
+          );
+      })
       .finally(() => {
-        setLoading(false);
+        if (active) setLoading(false);
         clearTimeout(timer);
       });
     return () => {
+      active = false;
       clearTimeout(timer);
       controller.abort();
     };

@@ -26,6 +26,8 @@ class AuthCatalogIT {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired AccountService accounts;
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
+    @Autowired org.springframework.security.crypto.password.PasswordEncoder encoder;
     @LocalServerPort int port;
     private static final String PASSWORD="integration_fixture_password_2026";
     private static final String CATEGORY="10000000-0000-0000-0000-000000000001";
@@ -68,6 +70,9 @@ class AuthCatalogIT {
             .content("{\"name\":\"Role "+role+"\",\"active\":true}"))
             .andExpect(status().is(operator?201:403));
         mvc.perform(get("/api/v1/users").with(user("fixture").roles(role.name()))).andExpect(status().is(role==AccountService.Role.ADMIN?200:403));
+        mvc.perform(post("/api/v1/users").with(user("fixture").roles(role.name())).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"displayName\":\"Usuario ficticio\",\"email\":\"new-"+role+"@example.invalid\",\"password\":\""+PASSWORD+"\",\"role\":\"VIEWER\"}"))
+            .andExpect(status().is(role==AccountService.Role.ADMIN?201:403));
     }
     @Test void productPersistsMoneyCategoryAndRejectsStaleEdits() throws Exception {
         var created=json.readTree(mvc.perform(post("/api/v1/products").with(user("operator").roles("MANAGER")).with(csrf())
@@ -109,6 +114,26 @@ class AuthCatalogIT {
         mvc.perform(get("/api/v1/products")).andExpect(status().isUnauthorized());
         mvc.perform(post("/api/v1/products").with(user("operator").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON)
             .content(product("csrf","Blocked","1.00",null))).andExpect(status().isForbidden());
+    }
+    @Test void demoBootstrapIsIdempotentAndPasswordsAreHashed() throws Exception {
+        var env=new org.springframework.mock.env.MockEnvironment();
+        for(var role:AccountService.Role.values()) env.withProperty("DEMO_"+role.name()+"_PASSWORD",PASSWORD);
+        var bootstrap=new pe.guillermo.nexus.auth.DemoAccounts(accounts,env);
+        bootstrap.run(new org.springframework.boot.DefaultApplicationArguments());
+        String hash=jdbc.queryForObject("SELECT password_hash FROM users WHERE email='admin@nexus.demo'",String.class);
+        assertThat(hash).isNotEqualTo(PASSWORD);assertThat(encoder.matches(PASSWORD,hash)).isTrue();
+        env.withProperty("DEMO_ADMIN_PASSWORD","replacement_password_not_applied");
+        bootstrap.run(new org.springframework.boot.DefaultApplicationArguments());
+        assertThat(jdbc.queryForObject("SELECT password_hash FROM users WHERE email='admin@nexus.demo'",String.class)).isEqualTo(hash);
+        mvc.perform(get("/api/v1/users").with(user("fixture").roles("ADMIN"))).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("password"))));
+    }
+    @Test void inactiveCategoriesAndCaseDuplicatesAreRejected() throws Exception {
+        var created=json.readTree(mvc.perform(post("/api/v1/categories").with(user("fixture").roles("MANAGER")).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"name\":\"Temporal\",\"active\":false}")).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        mvc.perform(post("/api/v1/products").with(user("fixture").roles("MANAGER")).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content(product("inactive","Inválido","2.00",null).replace(CATEGORY,created.get("id").asText()))).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/categories").with(user("fixture").roles("MANAGER")).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"name\":\"temporal\",\"active\":true}")).andExpect(status().isConflict());
     }
     private URI uri(String path) { return URI.create("http://127.0.0.1:"+port+"/api/v1"+path); }
     private String token(HttpClient client) throws Exception {

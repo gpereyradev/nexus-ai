@@ -5,8 +5,10 @@
 - Stack: React + TypeScript, Java/Spring Boot y PostgreSQL. Python desde F4.
 - Presupuesto externo S/0. No activar pagos, pruebas facturables ni hosting
   que requiera tarjeta. No realizar acciones externas que no solicite el usuario.
-- Entrega actual: 0.1.0, F0 en validación. No existe login ni CRUD de negocio.
-- Cierra la conexión real Java/PostgreSQL y verifica CI antes de marcar F0 completa.
+- Entrega actual: 0.2.0. F0 tiene integración Java/PostgreSQL aprobada en CI.
+- F1 incorpora login/logout con sesión y CSRF, cuatro roles, catálogos y alta de usuarios.
+- Próximo módulo F2: inventario trazable y ventas atómicas. No hay stock disponible, ventas, dashboard ni IA todavía.
+- Consulta la evidencia y limitaciones actuales en docs/VALIDACION.md; no confundas CI Linux con arranque Windows verificado.
 - Trabaja sobre el código actual; conserva cambios del usuario y evita
   reemplazar el proyecto completo para hacer una actualización pequeña.
 - Nunca simules métricas, persistencia, pruebas ejecutadas o características.
