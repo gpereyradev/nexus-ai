@@ -11,7 +11,8 @@
 - Venta guiada con productos agregados visibles y cliente opcional desplegable.
 - Mostrar/ocultar contraseña, foco inicial en formularios y textos más claros.
 - No cambia el modelo analítico, las migraciones ni los datos existentes.
-- Evidencia local, CI y publicación actual en docs/VALIDACION.md.
+- Publicada en la URL existente; cinco suites de CI con 102 comprobaciones
+  aprobadas. Evidencia y límites en docs/VALIDACION.md.
 
 ## 0.4.1 · 22/10/2026
 

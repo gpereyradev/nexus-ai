@@ -77,4 +77,5 @@ Evidencia ejecutada: [VALIDACION.md](VALIDACION.md).
 - Acciones frecuentes desde el panel, fechas rápidas y filtros reversibles.
 - Menú móvil compacto, navegación por teclado y formularios enfocados.
 - Venta con selección visible, cantidades y cliente opcional desplegable.
+- Publicada en Render Free sobre la base existente; CI con 102 comprobaciones aprobadas.
 - La revisión visual y E2E no sustituyen la auditoría completa de accesibilidad pendiente.

@@ -16,10 +16,52 @@ Revisión visual local de los ocho módulos en ambos temas a 1440, 1280, 768 y
 También aprobó venta rápida, cliente opcional, fechas, filtros y foco del menú.
 Utilizó fixtures controlados de API, no la base pública. La compilación de Java
 aprobó; Surefire local continúa bloqueado por resolución de dependencias.
-Las pruebas Java se comprobarán en CI.
+Las pruebas Java sí aprobaron en CI, como se detalla a continuación.
 
-La ejecución de CI y la actualización pública de esta entrega se registrarán
-cuando terminen. La evidencia pública siguiente corresponde a 0.4.1.
+[Run 39829502102](https://github.com/gpereyradev/nexus-ai/actions/runs/39829502102),
+commit publicado `694fc2f`, aprobó los cinco jobs en `main`:
+
+| Suite | Pruebas aprobadas |
+|---|---:|
+| Web | 14 |
+| Java unitarias/MVC | 19 |
+| Integración PostgreSQL | 46 |
+| Python analítica | 10 |
+| Configuración del lanzador público | 4 |
+| Playwright con procesos de desarrollo reales | 4 |
+| Playwright contra imagen construida y proxy HTTPS | 5 |
+| Total de ejecuciones aprobadas | 102 |
+
+Los cinco recorridos de la imagen aprobaron en 9.3 segundos. Uso puntual al
+terminar: 344.5 MiB/512 MiB, proceso activo y `oom=false`; no es un pico ni una
+prueba de carga. Los cuatro recorridos de desarrollo aprobaron en 27.1 segundos.
+La prueba exclusiva del perfil público se omite en el modo de desarrollo.
+Las escrituras E2E se hicieron únicamente sobre bases aisladas `_e2e` de CI.
+
+La revisión de la paleta verificó contraste de texto de al menos 4.5:1 en ocho
+pares semánticos por tema (texto, secundario, acciones y mensajes de estado).
+No sustituye una auditoría completa de accesibilidad ni otros navegadores.
+
+Render confirmó `live` el 22/10/2026 a las 18:18:01 UTC para
+`dep-dbd54qifngtc73fl47ag`, commit `694fc2f`, en el mismo servicio Free:
+https://nexus-ai-gpereyradev.onrender.com/
+
+La comprobación pública HTTP verificó certificado HTTPS con el almacén de
+confianza del entorno, health 0.5.0/PostgreSQL UP, HTML y recursos compilados
+nuevos, paletas claro/oscuro, CSP y rechazo 401 de `/me` sin sesión. No creó
+ventas, no modificó catálogos ni generó snapshots. No hay migraciones nuevas.
+
+El navegador público comprobó la pantalla de acceso 0.5.0 y el rótulo web,
+ambos temas, persistencia tras recarga y ancho 390 px sin desbordamiento del
+documento; el estado del entorno mostró PostgreSQL conectado, sin errores
+JavaScript. No inició sesión. La revisión visual usó el proxy del entorno con
+`ignoreHTTPSErrors` solo en ese contexto de navegador; la verificación del
+certificado HTTPS se hizo aparte en Python con validación activa.
+
+La revisión posterior solo actualiza documentación; el código desplegado y
+probado corresponde a `694fc2f`.
+
+La evidencia histórica siguiente corresponde a las entregas anteriores.
 
 ## Preparación de despliegue público
 
