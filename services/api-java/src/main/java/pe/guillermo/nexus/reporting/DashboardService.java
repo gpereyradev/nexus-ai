@@ -37,8 +37,8 @@ public class DashboardService {
         BigDecimal average=orders==0?new BigDecimal("0.00"):total.divide(BigDecimal.valueOf(orders),2,RoundingMode.HALF_UP);
         String matching=" FROM sales_items i JOIN sales s ON s.id=i.sale_id WHERE s.status='CONFIRMED' AND s.occurred_at>=? AND s.occurred_at<?";
         long units=Objects.requireNonNull(jdbc.queryForObject("SELECT COALESCE(SUM(i.quantity),0)"+matching,Long.class,start,end));
-        var days=jdbc.query("SELECT (occurred_at AT TIME ZONE 'America/Lima')::date day,COALESCE(SUM(total),0) total,COUNT(*) orders FROM sales WHERE status='CONFIRMED' AND occurred_at>=? AND occurred_at<? GROUP BY day ORDER BY day",
-            (rs,row)->new Day(rs.getObject("day",LocalDate.class),rs.getBigDecimal("total"),rs.getLong("orders")),start,end);
+        var days=jdbc.query("SELECT (occurred_at AT TIME ZONE 'America/Lima')::date AS sale_day,COALESCE(SUM(total),0) total,COUNT(*) orders FROM sales WHERE status='CONFIRMED' AND occurred_at>=? AND occurred_at<? GROUP BY sale_day ORDER BY sale_day",
+            (rs,row)->new Day(rs.getObject("sale_day",LocalDate.class),rs.getBigDecimal("total"),rs.getLong("orders")),start,end);
         var byDate=new HashMap<LocalDate,Day>();for(var day:days) byDate.put(day.date(),day);
         var daily=new ArrayList<Day>();for(LocalDate date=from;!date.isAfter(to);date=date.plusDays(1)) daily.add(byDate.getOrDefault(date,new Day(date,new BigDecimal("0.00"),0)));
         var categories=jdbc.query("SELECT i.category_name,COALESCE(SUM(i.subtotal),0) total"+matching+" GROUP BY i.category_name ORDER BY total DESC,i.category_name",

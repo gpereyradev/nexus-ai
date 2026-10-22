@@ -14,10 +14,11 @@ class DemoDatasetIT {
     @Autowired DemoDatasetService seed;
     @Autowired AccountService accounts;
     @Autowired JdbcTemplate jdbc;
-    @BeforeAll void account() {
+    private void account() {
         if(!accounts.exists("admin@nexus.demo")) accounts.create(new AccountService.NewAccount("Demo ADMIN","admin@nexus.demo","dataset_test_fixture_password_2026",AccountService.Role.ADMIN));
     }
     @Test void deterministicDatasetIsConsistentAndIdempotent() {
+        account();
         assertThat(seed.seed()).isTrue();assertThat(seed.seed()).isFalse();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM products WHERE sku LIKE 'DEMO-%'",Long.class)).isEqualTo(30);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM customers WHERE email LIKE '%@example.invalid' AND name LIKE 'Cliente demo %'",Long.class)).isEqualTo(20);

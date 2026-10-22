@@ -23,8 +23,8 @@ class DashboardIT {
     @Autowired AccountService accounts;
     @Autowired OperationsService operations;
     @Autowired JdbcTemplate jdbc;
-    @BeforeAll void account() { if(!accounts.exists("admin@nexus.demo")) accounts.create(new AccountService.NewAccount("Demo ADMIN","admin@nexus.demo","report_test_fixture_password_2026",AccountService.Role.ADMIN)); }
-    @BeforeEach void setup() { SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("admin@nexus.demo",null,List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));seed.seed(); }
+    private void account() { if(!accounts.exists("admin@nexus.demo")) accounts.create(new AccountService.NewAccount("Demo ADMIN","admin@nexus.demo","report_test_fixture_password_2026",AccountService.Role.ADMIN)); }
+    @BeforeEach void setup() { account(); SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("admin@nexus.demo",null,List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));seed.seed(); }
     @AfterEach void clear() { SecurityContextHolder.clearContext(); }
     @Test void dashboardMatchesIndependentSqlAndAllBreakdowns() {
         var report=reports.summary(LocalDate.parse("2026-07-01"),LocalDate.parse("2026-10-21"));
