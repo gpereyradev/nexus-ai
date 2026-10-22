@@ -1,4 +1,4 @@
-# Roadmap y aceptación · 0.4.1
+# Roadmap y aceptación · 0.5.0
 
 Fuente: especificación maestra NEXUS AI v1.0. Primero F0–F3, Python desde F4.
 
@@ -70,3 +70,11 @@ Evidencia ejecutada: [VALIDACION.md](VALIDACION.md).
 - Experimentos con snapshots inmutables y huella de datos. Consulta de últimos
   10 y detalle por UUID sin recalcular ni depender de Python.
 - Timeout recuperable; pruebas de venta real después de un fallo de analítica.
+
+## Usabilidad · 0.5.0
+
+- Temas claro/oscuro completos, oscuro morado y negro inicial, preferencia local.
+- Acciones frecuentes desde el panel, fechas rápidas y filtros reversibles.
+- Menú móvil compacto, navegación por teclado y formularios enfocados.
+- Venta con selección visible, cantidades y cliente opcional desplegable.
+- La revisión visual y E2E no sustituyen la auditoría completa de accesibilidad pendiente.

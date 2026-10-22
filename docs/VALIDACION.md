@@ -1,7 +1,25 @@
-# Validación · 0.4.1
+# Validación · 0.5.0
 
 Fecha: 22 de octubre de 2026. Se distingue ejecución en Linux/CI de arranque
 Windows o Compose local. No se activaron pagos ni APIs facturables.
+
+## Interfaz y usabilidad · 0.5.0
+
+TypeScript y 14 pruebas web aprobadas localmente. Se añadieron pruebas de tema
+inicial, restauración de preferencia, valores inválidos y almacenamiento bloqueado.
+La nueva prueba Playwright comprueba persistencia entre recargas, contraseña
+visible/oculta, períodos rápidos, venta desde el panel, cliente opcional,
+limpieza de filtros y menú móvil con Escape y retorno de foco.
+
+Revisión visual local de los ocho módulos en ambos temas a 1440, 1280, 768 y
+390 px: sin errores JavaScript ni desbordamiento horizontal del documento.
+También aprobó venta rápida, cliente opcional, fechas, filtros y foco del menú.
+Utilizó fixtures controlados de API, no la base pública. La compilación de Java
+aprobó; Surefire local continúa bloqueado por resolución de dependencias.
+Las pruebas Java se comprobarán en CI.
+
+La ejecución de CI y la actualización pública de esta entrega se registrarán
+cuando terminen. La evidencia pública siguiente corresponde a 0.4.1.
 
 ## Preparación de despliegue público
 

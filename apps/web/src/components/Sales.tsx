@@ -1,3 +1,4 @@
+import ClearFilters from "./ClearFilters";
 import { useEffect, useState, type FormEvent } from "react";
 import { request, save } from "../api/client";
 import {
@@ -30,7 +31,9 @@ export default function Sales({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(
+    canEdit && params.get("compose") === "true",
+  );
   const [detail, setDetail] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const filters = params.toString();
@@ -39,6 +42,7 @@ export default function Sales({
     const controller = new AbortController();
     const search = new URLSearchParams(filters);
     search.delete("view");
+    search.delete("compose");
     setLoading(true);
     setData(null);
     setError("");
@@ -116,6 +120,7 @@ export default function Sales({
         <button className="secondary" type="submit">
           Buscar
         </button>
+        <ClearFilters params={params} onParams={onParams} />
       </form>
       {notice && (
         <p role="status" className="connection-message success">
@@ -189,9 +194,13 @@ export default function Sales({
       )}
       {creating && (
         <NewSale
-          onClose={() => setCreating(false)}
+          onClose={() => {
+            setCreating(false);
+            if (params.has("compose")) onParams({ compose: "" });
+          }}
           onSaved={(sale) => {
             setCreating(false);
+            if (params.has("compose")) onParams({ compose: "" });
             setDetail(sale.id);
             setNotice(
               sale.status === "CONFIRMED"
@@ -318,8 +327,8 @@ function NewSale({
       <form className="editor-form" onSubmit={(e) => void submit(e)}>
         <fieldset disabled={busy}>
           <p className="form-hint">
-            El servidor verifica las existencias y toma el precio actual de cada
-            producto al confirmar. El total mostrado es una estimación.
+            1. Agrega productos · 2. Revisa las cantidades · 3. Confirma la
+            venta. El precio y las existencias se verifican al confirmar.
           </p>
           <label>
             Buscar producto
@@ -355,13 +364,24 @@ function NewSale({
                       {p.sku} · {p.stock} disponibles
                     </small>
                   </span>
-                  <span>{currency(p.price)} +</span>
+                  <span>
+                    {lines.some((l) => l.product.id === p.id)
+                      ? "✓ Agregado"
+                      : p.stock < 1
+                        ? "Sin stock"
+                        : `${currency(p.price)} +`}
+                  </span>
                 </button>
               ))
             ) : (
               <p>No hay productos para esta búsqueda.</p>
             )}
           </div>
+          <p className="cart-status" role="status">
+            {lines.length
+              ? `${lines.length} ${lines.length === 1 ? "producto agregado" : "productos agregados"}. Ajusta las unidades abajo.`
+              : "Tu venta está vacía. Selecciona un producto para empezar."}
+          </p>
           {lines.length > 0 && (
             <div className="sale-lines">
               {lines.map((line) => (
@@ -417,37 +437,47 @@ function NewSale({
               ))}
             </div>
           )}
-          <label>
-            Buscar cliente (opcional)
-            <input
-              value={customerQuery}
-              maxLength={160}
-              placeholder="Nombre o correo"
-              onChange={(e) => setCustomerQuery(e.target.value)}
-            />
-          </label>
-          <label>
-            Cliente
-            <select
-              value={customer?.id || ""}
-              onChange={(e) => {
-                setCustomer(
-                  customers.find((c) => c.id === e.target.value) || null,
-                );
-                changed();
-              }}
-            >
-              <option value="">Público general</option>
-              {customer && !customers.some((c) => c.id === customer.id) && (
-                <option value={customer.id}>{customer.name}</option>
-              )}
-              {customers.map((c) => (
-                <option value={c.id} key={c.id}>
-                  {c.name} · {c.email || "Sin correo"}
-                </option>
-              ))}
-            </select>
-          </label>
+          <details className="optional-customer">
+            <summary>
+              {customer
+                ? `Cliente: ${customer.name}`
+                : "Agregar cliente · opcional"}
+            </summary>
+            <p className="form-hint">
+              Si no eliges un cliente, la venta se registra a Público general.
+            </p>
+            <label>
+              Buscar cliente (opcional)
+              <input
+                value={customerQuery}
+                maxLength={160}
+                placeholder="Nombre o correo"
+                onChange={(e) => setCustomerQuery(e.target.value)}
+              />
+            </label>
+            <label>
+              Cliente
+              <select
+                value={customer?.id || ""}
+                onChange={(e) => {
+                  setCustomer(
+                    customers.find((c) => c.id === e.target.value) || null,
+                  );
+                  changed();
+                }}
+              >
+                <option value="">Público general</option>
+                {customer && !customers.some((c) => c.id === customer.id) && (
+                  <option value={customer.id}>{customer.name}</option>
+                )}
+                {customers.map((c) => (
+                  <option value={c.id} key={c.id}>
+                    {c.name} · {c.email || "Sin correo"}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </details>
           <div className="sale-total">
             <span>Total estimado</span>
             <strong>{currency((Number(total) / 100).toFixed(2))}</strong>

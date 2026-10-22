@@ -4,7 +4,7 @@ afterEach(() => vi.unstubAllGlobals());
 const healthy = {
   status: "UP",
   application: "nexus-api",
-  version: "0.4.1",
+  version: "0.5.0",
   phase: "F4",
   database: "UP",
   currency: "PEN",

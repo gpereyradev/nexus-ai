@@ -17,7 +17,7 @@ class HealthControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean HealthService health;
     @Test void publicHealthReturnsContract() throws Exception {
-        when(health.check()).thenReturn(new HealthService.HealthResponse("UP", "nexus-api", "0.4.1", "F4", "UP", "PEN", "America/Lima", Instant.parse("2026-10-22T10:00:00Z")));
+        when(health.check()).thenReturn(new HealthService.HealthResponse("UP", "nexus-api", "0.5.0", "F4", "UP", "PEN", "America/Lima", Instant.parse("2026-10-22T10:00:00Z")));
         mvc.perform(get("/api/v1/health")).andExpect(status().isOk()).andExpect(jsonPath("$.database").value("UP")).andExpect(jsonPath("$.currency").value("PEN"));
     }
     @Test void databaseFailureDoesNotLeakDetails() throws Exception {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Icon from "./Icon";
 import { request } from "../api/client";
 import { currency, daysBefore, limaDate } from "../api/operations";
 type Summary = {
@@ -31,7 +32,11 @@ type Summary = {
 };
 export default function Dashboard({
   navigate,
+  canEdit,
+  canAnalyze,
 }: {
+  canEdit: boolean;
+  canAnalyze: boolean;
   navigate: (view: string, filters?: Record<string, string>) => void;
 }) {
   const [from, setFrom] = useState(() => daysBefore(limaDate(), 29));
@@ -69,6 +74,54 @@ export default function Dashboard({
       .join(" ") || "";
   return (
     <section className="dashboard">
+      <div className="quick-actions" aria-label="Accesos rápidos">
+        <button
+          onClick={() => navigate("sales", canEdit ? { compose: "true" } : {})}
+        >
+          <span className="quick-icon">
+            <Icon name="sales" />
+          </span>
+          <span>
+            <strong>{canEdit ? "Nueva venta" : "Consultar ventas"}</strong>
+            <small>
+              {canEdit
+                ? "Registra productos en pocos pasos"
+                : "Encuentra el detalle de cada operación"}
+            </small>
+          </span>
+          <Icon name="arrow" />
+        </button>
+        <button
+          onClick={() =>
+            navigate("inventory", { lowOnly: "true", active: "true" })
+          }
+        >
+          <span className="quick-icon">
+            <Icon name="inventory" />
+          </span>
+          <span>
+            <strong>Revisar stock</strong>
+            <small>Productos que necesitan atención</small>
+          </span>
+          <Icon name="arrow" />
+        </button>
+        <button onClick={() => navigate(canAnalyze ? "analytics" : "products")}>
+          <span className="quick-icon">
+            <Icon name={canAnalyze ? "analytics" : "products"} />
+          </span>
+          <span>
+            <strong>
+              {canAnalyze ? "Explorar pronósticos" : "Ver productos"}
+            </strong>
+            <small>
+              {canAnalyze
+                ? "Planifica con tu historial de ventas"
+                : "Consulta tu catálogo y precios"}
+            </small>
+          </span>
+          <Icon name="arrow" />
+        </button>
+      </div>
       <div className="section-heading">
         <div>
           <h2>Así va tu negocio</h2>
@@ -84,6 +137,27 @@ export default function Dashboard({
         >
           Actualizar
         </button>
+      </div>
+      <div className="period-shortcuts" aria-label="Períodos rápidos">
+        {[1, 7, 30].map((days) => (
+          <button
+            key={days}
+            className="secondary"
+            aria-pressed={
+              period.to === limaDate() &&
+              period.from === daysBefore(limaDate(), days - 1)
+            }
+            onClick={() => {
+              const to = limaDate();
+              const from = daysBefore(to, days - 1);
+              setFrom(from);
+              setTo(to);
+              setPeriod({ from, to });
+            }}
+          >
+            {days === 1 ? "Hoy" : `Últimos ${days} días`}
+          </button>
+        ))}
       </div>
       <form
         className="filters dashboard-filters"
@@ -203,8 +277,16 @@ export default function Dashboard({
               >
                 <defs>
                   <linearGradient id="sales-fill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#168b70" stopOpacity=".2" />
-                    <stop offset="100%" stopColor="#168b70" stopOpacity=".01" />
+                    <stop
+                      offset="0%"
+                      stopColor="var(--chart)"
+                      stopOpacity=".2"
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor="var(--chart)"
+                      stopOpacity=".01"
+                    />
                   </linearGradient>
                 </defs>
                 {[32, 81, 130, 180].map((y) => (
@@ -214,7 +296,7 @@ export default function Dashboard({
                     x2="776"
                     y1={y}
                     y2={y}
-                    stroke="#e1e8e4"
+                    stroke="var(--line)"
                   />
                 ))}
                 <polygon
@@ -224,7 +306,7 @@ export default function Dashboard({
                 <polyline
                   points={points}
                   fill="none"
-                  stroke="#168b70"
+                  stroke="var(--chart)"
                   strokeWidth="3"
                   strokeLinejoin="round"
                 />
@@ -233,7 +315,7 @@ export default function Dashboard({
                     cx="24"
                     cy={180 - (Number(data.daily[0].total) / max) * 148}
                     r="4"
-                    fill="#168b70"
+                    fill="var(--chart)"
                   />
                 )}
                 <text x="24" y="205">
@@ -363,7 +445,8 @@ export default function Dashboard({
             </section>
             <p className="form-hint">
               Indicadores calculados desde las ventas confirmadas. La moneda es
-              PEN y cada día se delimita según America/Lima. Los pronósticos están disponibles en Análisis según tu rol.
+              PEN y cada día se delimita según America/Lima. Los pronósticos
+              están disponibles en Análisis según tu rol.
             </p>
           </>
         )

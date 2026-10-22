@@ -1,3 +1,4 @@
+import ClearFilters from "./ClearFilters";
 import { useEffect, useState, type FormEvent } from "react";
 import { ApiError, request, save } from "../api/client";
 import Modal from "./Modal";
@@ -201,7 +202,8 @@ export default function Catalog({
           <button className="secondary" type="submit">
             Buscar
           </button>
-        </form>
+          <ClearFilters params={params} onParams={onParams} />
+      </form>
       )}
       {notice && (
         <p role="status" className="connection-message success">

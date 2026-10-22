@@ -1,5 +1,18 @@
 # Cambios
 
+## 0.5.0 · 22/10/2026
+
+- Tema oscuro morado y negro por defecto y tema claro; selector en acceso y
+  aplicación con preferencia persistida en el navegador, incluso al recargar.
+- Paleta compartida en formularios, tablas, gráficos, alertas y diálogos.
+- Accesos directos del panel a nueva venta, stock bajo y pronósticos según rol.
+- Períodos Hoy / últimos 7 / últimos 30 días y limpieza de filtros en un clic.
+- Menú móvil en diálogo con Escape y retorno de foco; acceso a contenido por teclado.
+- Venta guiada con productos agregados visibles y cliente opcional desplegable.
+- Mostrar/ocultar contraseña, foco inicial en formularios y textos más claros.
+- No cambia el modelo analítico, las migraciones ni los datos existentes.
+- Evidencia local, CI y publicación actual en docs/VALIDACION.md.
+
 ## 0.4.1 · 22/10/2026
 
 - Imagen pública única con React compilado servido por Spring y FastAPI
