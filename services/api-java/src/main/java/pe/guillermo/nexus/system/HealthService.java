@@ -12,7 +12,7 @@ public class HealthService {
         jdbc.queryForObject("SELECT 1", Integer.class);
         if (demoDataEnabled && !Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM demo_seed_runs WHERE code='retail-v1')", Boolean.class)))
             throw new pe.guillermo.nexus.operations.BusinessException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,"INITIALIZING","Preparando los datos ficticios de demostración.");
-        return new HealthResponse("UP", "nexus-api", "0.4.0", "F4", "UP", "PEN", "America/Lima", Instant.now());
+        return new HealthResponse("UP", "nexus-api", "0.4.1", "F4", "UP", "PEN", "America/Lima", Instant.now());
     }
     public record HealthResponse(String status, String application, String version, String phase,
         String database, String currency, String timezone, Instant checkedAt) {}

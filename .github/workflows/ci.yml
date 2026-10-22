@@ -101,3 +101,73 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: mvn -B -f services/api-java/pom.xml package -DskipTests
       - run: npm run test:e2e
+  public-container:
+    needs: [web, api, analytics]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DB_NAME: nexus_public_e2e
+      NEXUS_PUBLIC_E2E: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: python3 -m unittest discover -s infra/public -p 'test_*.py' -v
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Build the actual deployment image
+        run: docker build -f infra/public/Dockerfile -t nexus-public:ci .
+      - name: Start isolated database, 512 MiB app and HTTPS proxy
+        run: |
+          docker network create nexus-public-ci
+          docker run -d --name nexus-public-db --network nexus-public-ci \
+            -e POSTGRES_DB=nexus_public_e2e -e POSTGRES_USER=nexus_ci \
+            -e POSTGRES_PASSWORD=ci_database_fixture postgres:17-alpine
+          for attempt in $(seq 1 40); do
+            if docker exec nexus-public-db pg_isready -U nexus_ci -d nexus_public_e2e; then break; fi
+            sleep 1
+          done
+          docker run -d --name nexus-public-app --network nexus-public-ci \
+            --memory=512m --memory-swap=512m --cpus=1 \
+            -e DATABASE_URL=postgresql://nexus_ci:ci_database_fixture@nexus-public-db/nexus_public_e2e \
+            -e DB_SSL_MODE=disable -e ANALYTICS_ENABLED=true \
+            -e ANALYTICS_API_KEY=e2e_fixture_internal_analytics_key_2026 \
+            -e DEMO_ENABLED=true -e DEMO_DATA_ENABLED=true \
+            -e DEMO_ADMIN_PASSWORD=e2e_fixture_admin_password_2026 \
+            -e DEMO_MANAGER_PASSWORD=e2e_fixture_manager_password_2026 \
+            -e DEMO_ANALYST_PASSWORD=e2e_fixture_analyst_password_2026 \
+            -e DEMO_VIEWER_PASSWORD=e2e_fixture_viewer_password_2026 nexus-public:ci
+          mkdir -p /tmp/nexus-ci-certs
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+            -keyout /tmp/nexus-ci-certs/key.pem -out /tmp/nexus-ci-certs/cert.pem \
+            -subj /CN=localhost >/dev/null 2>&1
+          docker run -d --name nexus-public-proxy --network nexus-public-ci \
+            -p 127.0.0.1:15443:443 \
+            -v /tmp/nexus-ci-certs:/certs:ro \
+            -v "$PWD/infra/public/ci-proxy.conf:/etc/nginx/nginx.conf:ro" nginx:alpine
+          ready=false
+          for attempt in $(seq 1 90); do
+            if curl --insecure --fail --silent https://127.0.0.1:15443/api/v1/health; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          test "$ready" = true
+      - name: Browser E2E against built frontend, Java, Python and PostgreSQL
+        run: npm run test:e2e
+      - name: Record constrained-container memory and OOM state
+        if: always()
+        run: |
+          docker stats --no-stream nexus-public-app || true
+          docker inspect --format 'status={{.State.Status}} oom={{.State.OOMKilled}} exit={{.State.ExitCode}}' nexus-public-app || true
+      - name: Diagnostic logs (CI fixtures only)
+        if: failure()
+        run: docker logs --tail 150 nexus-public-app
+      - name: Clean up isolated containers
+        if: always()
+        run: |
+          docker rm -f nexus-public-proxy nexus-public-app nexus-public-db || true
+          docker network rm nexus-public-ci || true

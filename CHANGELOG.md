@@ -1,5 +1,21 @@
 # Cambios
 
+## 0.4.1 · 22/10/2026
+
+- Imagen pública única con React compilado servido por Spring y FastAPI
+  privado en loopback; conserva el stack y la base PostgreSQL externa.
+- Blueprint Render Free + Neon Free, secretos aleatorios privados, cookies
+  Secure y TLS PostgreSQL con validación de certificado y hostname.
+- Supervisor con cierre de hijos y reinicio independiente de Python; ajustes
+  de memoria y conexiones para una demo gratuita con recursos limitados.
+- Rutas estáticas GET explícitas, CSP y pruebas para conservar API y archivos
+  internos cerrados. Interfaz pública sin instrucciones de terminal locales.
+- CI de la imagen real con HTTPS, 512 MiB y recorridos completos de navegador.
+- Barra lateral desplazable en pantallas bajas para mantener accesible el
+  cierre de sesión con todos los módulos visibles.
+- Guía de publicación, actualización y persistencia. Estado y evidencia exactos
+  en docs/VALIDACION.md; no confundir configuración con publicación completada.
+
 ## 0.4.0 · 22/10/2026
 
 - Servicio Python local con FastAPI y scikit-learn, autenticado mediante clave

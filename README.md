@@ -10,6 +10,10 @@ reposición orientativa y resultados guardados con los agregados utilizados.
 No utiliza un chatbot ni APIs de IA comerciales.
 
 La evidencia y sus límites están en [docs/VALIDACION.md](docs/VALIDACION.md).
+La versión **0.4.1** añade una imagen pública con web, Java y Python, Blueprint
+Render Free y PostgreSQL externo en Neon Free. Consulta
+[docs/DESPLIEGUE.md](docs/DESPLIEGUE.md): preparar el repositorio no significa
+que ya exista una URL publicada y comprobada.
 La especificación original se conserva en
 [docs/NEXUS_AI_Especificacion_Maestra.pdf](docs/NEXUS_AI_Especificacion_Maestra.pdf).
 

@@ -13,6 +13,8 @@ const roles = {
   ANALYST: "Analista",
   VIEWER: "Lector",
 };
+const publicDeployment = import.meta.env.VITE_DEPLOYMENT_MODE === "public";
+const deploymentLabel = publicDeployment ? "Demostración web" : "Demostración local";
 const titles: Record<string, string> = {
   home: "Tu negocio, bien organizado.",
   products: "Productos",
@@ -148,13 +150,13 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-note">
-          <span className="small-dot" /> DEMOSTRACIÓN LOCAL
+          <span className="small-dot" /> {deploymentLabel.toUpperCase()}
           <p>
             Datos ordenados.
             <br />
             Decisiones con base.
           </p>
-          <small>v0.4.0 · Gestión y analítica local</small>
+          <small>v0.4.1 · Gestión y analítica</small>
         </div>
         <button className="logout-button" onClick={() => void leave()}>
           Cerrar sesión ↗
@@ -184,7 +186,7 @@ export default function App() {
                   : "Consulta y organiza tu operación desde un solo espacio."}
               </p>
             </div>
-            <span className="version">v0.4.0</span>
+            <span className="version">v0.4.1</span>
           </div>
           {notice && (
             <p className="connection-message" role="status">
@@ -221,7 +223,7 @@ export default function App() {
           )}
           <footer className="page-footer">
             <span>NEXUS AI · Guillermo Pereyra</span>
-            <span>Demostración local · Sin cobros reales</span>
+            <span>{deploymentLabel} · Sin cobros reales</span>
           </footer>
         </main>
       </div>
@@ -292,7 +294,7 @@ function Login({
           <p className="eyebrow">BIENVENIDO A NEXUS</p>
           <h2>Entra a tu espacio</h2>
           <p className="subtitle">
-            Usa una cuenta local creada para esta demostración.
+            Usa una cuenta creada para esta demostración.
           </p>
           {notice && (
             <p className="connection-message" role="status">
@@ -335,11 +337,14 @@ function Login({
           </form>
           <details className="demo-help">
             <summary>¿Cómo obtengo una cuenta de demostración?</summary>
-            <p>
+            {publicDeployment ? <p>
+              Solicita una cuenta al responsable de esta demostración. Si el
+              servicio está iniciando, la primera conexión puede tardar un momento.
+            </p> : <p>
               Después de configurar e iniciar Java, ejecuta{" "}
               <code>npm run accounts</code> en tu equipo para consultar tus
               credenciales locales. No las publiques.
-            </p>
+            </p>}
           </details>
           <button
             className="text-button"
@@ -351,7 +356,7 @@ function Login({
           </button>
           {environment && <Environment />}
           <p className="login-footnote">
-            v0.4.0 · Entorno local · Datos ficticios
+            v0.4.1 · {deploymentLabel} · Datos ficticios
           </p>
         </div>
       </main>
@@ -378,7 +383,7 @@ function Environment() {
         if (active)
           setError(
             controller.signal.aborted
-              ? "No se pudo verificar la conexión. Comprueba Java y PostgreSQL."
+              ? "El servicio está tardando en responder. Espera un momento y vuelve a comprobar."
               : e.message,
           );
       })

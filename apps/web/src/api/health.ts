@@ -15,7 +15,7 @@ export async function fetchHealth(signal?: AbortSignal): Promise<Health> {
   });
   if (!response.ok)
     throw new Error(
-      "La API no está disponible. Comprueba Java, PostgreSQL y las variables de .env.",
+      "El servicio no está disponible. Espera un momento y vuelve a comprobar.",
     );
   const value: unknown = await response.json();
   if (!value || typeof value !== "object")

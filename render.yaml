@@ -1,0 +1,38 @@
+# Free demo only. No paid databases, disks or background services.
+services:
+  - type: web
+    name: nexus-ai
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    dockerfilePath: ./infra/public/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SPRING_PROFILES_ACTIVE
+        value: public
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: DB_SSL_MODE
+        value: verify-full
+      - key: ANALYTICS_ENABLED
+        value: "true"
+      - key: ANALYTICS_API_KEY
+        generateValue: true
+      - key: DEMO_ENABLED
+        value: "true"
+      - key: DEMO_DATA_ENABLED
+        value: "true"
+      - key: DEMO_ADMIN_PASSWORD
+        generateValue: true
+      - key: DEMO_MANAGER_PASSWORD
+        generateValue: true
+      - key: DEMO_ANALYST_PASSWORD
+        generateValue: true
+      - key: DEMO_VIEWER_PASSWORD
+        generateValue: true

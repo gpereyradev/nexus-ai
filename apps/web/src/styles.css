@@ -49,6 +49,10 @@ a {
   inset: 0 auto 0 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+}
+.sidebar > * {
+  flex-shrink: 0;
 }
 .brand {
   text-decoration: none;
