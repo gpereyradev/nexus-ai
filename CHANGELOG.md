@@ -1,5 +1,23 @@
 # Cambios
 
+## 0.2.0 · 22/10/2026
+
+- Login/logout mediante sesiones de servidor: cookie HttpOnly/SameSite,
+  rotación de sesión y de CSRF, y límite de intentos de acceso por IP.
+- Cuatro roles autorizados en API. Lectura para todos; escritura de catálogos
+  para ADMIN/MANAGER; creación y consulta de usuarios solo para ADMIN.
+- Productos, categorías y clientes persistidos; búsqueda, filtros, orden,
+  paginación, errores de validación y desactivación lógica.
+- Conflictos de edición con versión optimista; SKU normalizado y único;
+  nombres de categoría únicos sin distinguir mayúsculas.
+- Migración V3; las migraciones V1 y V2 permanecen intactas.
+- Cuentas demo opcionales con contraseñas locales aleatorias y bootstrap
+  idempotente. Setup actualiza claves ausentes sin reemplazar valores existentes.
+- Interfaz responsive, formularios accesibles y controles según rol.
+- Documentación de actualización, contrato OpenAPI y pruebas de sesión,
+  permisos, persistencia, conflictos y datos inválidos.
+- F0 comprobada con PostgreSQL real y build JAR en GitHub Actions.
+
 ## 0.1.0 · 22/10/2026
 
 - Monorepo inicial con React/TypeScript y API Spring Boot.
