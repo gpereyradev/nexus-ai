@@ -1,7 +1,7 @@
 # Validación · 0.4.1
 
 Fecha: 22 de octubre de 2026. Se distingue ejecución en Linux/CI de arranque
-Windows o Compose local. No se activaron pagos, hosting ni APIs facturables.
+Windows o Compose local. No se activaron pagos ni APIs facturables.
 
 ## Preparación de despliegue público
 
@@ -10,10 +10,34 @@ Neon, supervisor y guía. TypeScript, 10 pruebas web, build y 4 pruebas del
 lanzador aprobaron localmente. La ejecución local de pruebas Java sigue
 bloqueada al resolver dependencias de Surefire; no se presenta como aprobada.
 
-Pendiente registrar el run de CI de este cambio: prueba imagen real bajo 512 MiB,
-sesión HTTPS, flujo completo y memoria/OOM. El proveedor usa CPU fraccionada,
-distinta del límite de 1 CPU de CI. No se afirma rendimiento público certificado.
-La publicación se confirma solo con una URL y estado exitoso del proveedor.
+[Run 39820450428](https://github.com/gpereyradev/nexus-ai/actions/runs/39820450428),
+commit operativo `866789e`, aprobó los cinco jobs: web, api, analytics, e2e y
+public-container. La revisión posterior solo registra evidencia en documentación.
+
+| Suite | Pruebas aprobadas |
+|---|---:|
+| Web | 10 |
+| Java unitarias/MVC | 19 |
+| Integración PostgreSQL | 46 |
+| Python analítica | 10 |
+| Configuración del lanzador público | 4 |
+| Playwright con procesos de desarrollo reales | 3 |
+| Playwright contra imagen construida y proxy HTTPS | 4 |
+| Total de ejecuciones aprobadas | 96 |
+
+Las cuatro pruebas de la imagen aprobaron en 12.0 segundos. Comprueban sesión
+Secure/HttpOnly/SameSite, recarga autenticada, cierre sin acceso residual,
+CSRF/rutas cerradas, venta/anulación, lectura móvil y pronósticos reales. No se
+interceptaron peticiones de API. La imagen quedó ejecutándose, `oom=false`, con
+349.1 MiB de uso puntual sobre 512 MiB. Es una muestra al terminar, no un pico
+medido ni una prueba de carga. Se corrigió el scroll de la barra lateral después
+de que el primer intento detectara el cierre de sesión fuera del viewport.
+
+El proveedor usa CPU fraccionada, distinta del límite de 1 CPU de CI. No se
+afirma rendimiento público certificado. Se creó el proyecto exclusivo Neon Free
+con PostgreSQL 17; Render está preparado en Free. Queda pendiente guardar la
+conexión como secreto, publicar y comprobar la URL real del proveedor. La
+configuración y CI no sustituyen esa verificación pública.
 
 ## Evidencia de F4
 
