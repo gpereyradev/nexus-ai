@@ -1,8 +1,7 @@
-# Actualizar a 0.3.0
+# Actualizar a 0.4.0
 
-Trabaja dentro de tu copia existente. No necesitas otro ZIP ni recrear la base.
-Revisa `git status`; guarda tus cambios de código antes de actualizar. `.env`
-sigue siendo local y está excluido de Git.
+Desde tu copia existente revisa `git status` y guarda tus cambios de código.
+No necesitas otro ZIP ni recrear la BD. `.env` permanece fuera de Git.
 
 ```bash
 git switch main
@@ -11,48 +10,64 @@ npm ci
 npm run setup
 ```
 
-Si consultas la versión antes de integrar el PR, la rama es
-`feat/f2-inventory-sales`. Después de la integración usa `main`.
+Antes de integrar el PR, la rama de desarrollo es `feat/f4-analytics`.
+Setup conserva valores existentes y añade `ANALYTICS_ENABLED`, `ANALYTICS_URL`,
+`ANALYTICS_TIMEOUT_MS` y una `ANALYTICS_API_KEY` aleatoria. No publica ni imprime
+la clave. Si copiaste el placeholder manualmente, elimina solo esa línea de tu
+`.env` y repite setup para generar una clave; no compartas su contenido.
 
-Setup conserva claves existentes y añade las ausentes. Esta versión añade
-`DEMO_DATA_ENABLED=true`: prepara datos ficticios al siguiente arranque. Si
-prefieres mantener tus catálogos sin añadir el dataset, cambia a `false` antes
-de iniciar Java. No compartas `.env` ni `npm run accounts`.
-
-Detén Java con Ctrl+C y vuelve a iniciarlo:
+Detén Java y reinícialo:
 
 ```bash
 npm run api
 ```
 
-O, si usas Compose, reconstruye conservando el volumen:
+Flyway aplica V5 para snapshots de análisis. V1–V4 siguen intactas y no se
+borran usuarios, ventas ni stock. Las versiones antiguas aplican V3/V4 primero
+si aún faltan. No elimines tablas ni volúmenes para actualizar.
+
+## Activar Python sin Docker
+
+Instala Python 3.12. En Windows/Git Bash, desde la raíz:
 
 ```bash
-docker compose --env-file .env -f infra/compose.yaml up -d --build
-docker compose --env-file .env -f infra/compose.yaml logs -f api
+py -3.12 -m venv services/analytics-python/.venv
+services/analytics-python/.venv/Scripts/python.exe -m pip install -r services/analytics-python/requirements.txt
+npm run analytics
 ```
 
-Flyway aplica V4 sobre V1–V3 sin borrar usuarios, clientes ni productos.
-V4 añade ventas, líneas, movimientos, vista de saldos y protección del historial.
-El dataset opcional se carga después de las cuentas demo en una transacción.
-La primera carga puede tardar unos segundos; health devuelve 503 mientras se prepara.
-Deshabilitar el dataset no elimina datos previamente cargados.
+En Linux/macOS usa `python3.12 -m venv` y `.venv/bin/python`.
+Mantén `npm run api`, `npm run analytics` y `npm run dev` en tres terminales.
+Entra como ADMIN, MANAGER o ANALYST y abre Análisis. Usa las fechas demo para
+el dataset opcional; genera 7/14 días, revisa método/MAE y abre el resultado
+conservado en Análisis guardados. VIEWER no tiene acceso a analítica.
 
-En otra terminal:
+Si Python no está instalado o está detenido, ventas/inventario continúan
+operando. Analítica devuelve un error recuperable. Para deshabilitarla usa
+`ANALYTICS_ENABLED=false`; los snapshots anteriores siguen consultables por
+roles autorizados. La generación necesita la clave coincidente en Java/Python.
+El backend no permite URL arbitraria fuera de loopback/hostname `analytics`.
+
+## Con Compose
 
 ```bash
-npm run accounts
-npm run dev
+docker compose --env-file .env -f infra/compose.yaml --profile analytics up -d --build
+docker compose --env-file .env -f infra/compose.yaml logs -f api analytics
 ```
 
-Abre http://localhost:5173. Comprueba Panel, Inventario y Ventas. Con ADMIN:
-crea un producto, ingresa cinco unidades, vende dos y anula; el saldo vuelve a
-cinco y el historial conserva tres movimientos. Con VIEWER puedes consultar,
-pero la API y la interfaz impiden escribir. Solo ADMIN puede anular ventas.
+El perfil añade Python a la red interna sin exponer su puerto. No es obligatorio
+para la operación principal. Conservar `nexus_data` mantiene los datos. La
+receta Compose y el arranque Windows siguen pendientes de verificación manual.
 
-Un 409 por stock significa que otra operación cambió las existencias; revisa
-el inventario antes de crear un nuevo intento. Un fallo de red al confirmar no
-permite asumir que la venta falló: reintenta desde el mismo formulario, que
-conserva la clave de solicitud mientras no cambies sus datos. Si cerraste el
-formulario, consulta el listado de ventas antes de repetirla. Nunca borres el
-volumen o las tablas para resolver una actualización.
+## Qué comprobar
+
+1. Confirmar/anular una venta mantiene saldos e historial.
+2. En Análisis, generar con 84+ días y 28+ días con ventas; con pocos datos se
+   muestra «Historial insuficiente» sin curva.
+3. Comparar el total observado con Panel en el mismo período; comprobar MAE,
+   fechas de entrenamiento/evaluación, versión y advertencias.
+4. Detener Python: la generación falla de forma recuperable; se siguen abriendo
+   análisis guardados y registrando ventas. Reiniciar Python permite reintentar.
+
+Las sugerencias son orientativas, sin órdenes de compra automáticas ni garantía
+de demanda. No se implementó chatbot, LLM ni API comercial.

@@ -1,4 +1,4 @@
-# API · 0.3.0
+# API · 0.4.0
 
 Contrato completo: [openapi.yaml](openapi.yaml), OpenAPI 3.1.
 Base `/api/v1`. JSON salvo el formulario de login. No hay CORS global ni JWT.
@@ -101,7 +101,7 @@ hashes ni stacktrace. Los rechazos del filtro de seguridad no incluyen fields.
 | 429 | Límite de intentos de acceso |
 | 503 | PostgreSQL dejó de estar disponible tras arrancar Java, en health |
 
-Health informa versión 0.3.0, phase F3, moneda PEN, timezone America/Lima y
+Health informa versión 0.4.0, phase F4, moneda PEN, timezone America/Lima y
 checkedAt en UTC. Siempre consulta SELECT 1. Si PostgreSQL no está accesible
 al arrancar, Flyway impide el inicio y el frontend informa error de conexión.
 
@@ -159,3 +159,45 @@ Errores: 400 datos/fechas inválidos, 401 sesión ausente, 403 rol/CSRF,
 404 registro ausente, 409 stock/conflicto/idempotencia/operación ocupada.
 Durante la carga inicial opcional del dataset health responde 503 `INITIALIZING`.
 Los importes se limitan a 9999999999.99; el saldo al entero positivo de 32 bits.
+
+## Analítica local y experimentos
+
+| Método / ruta | Uso | Permiso |
+|---|---|---|
+| POST /analytics/forecast | Leer agregados, calcular y guardar experimento | ADMIN / MANAGER / ANALYST + CSRF |
+| GET /analytics/runs | Últimos 10 experimentos, sin recalcular | ADMIN / MANAGER / ANALYST |
+| GET /analytics/runs/{id} | Snapshot de resultado por UUID | ADMIN / MANAGER / ANALYST |
+
+Solicitud:
+
+```json
+{"from":"2026-07-01","to":"2026-10-21","forecastHorizonDays":7}
+```
+
+Fechas inclusivas de Lima: entre 1 y 366 días, cierre máximo ayer. Horizonte
+1–14 días. Java obtiene ventas confirmadas y productos activos desde PostgreSQL.
+El consumidor no envía series ni datos de otro negocio para sustituir esa fuente.
+El cálculo requiere 84 días desde la primera venta y 28 días con importe de ventas positivo en el
+período; si no alcanza devuelve 422 `INSUFFICIENT_HISTORY`, sin predicciones.
+
+200 devuelve `runId`, métrica, método/versión, fecha UTC, período final, evaluación,
+historial, predicciones, resumen, anomalías, reposición y advertencias. Importes
+como cadenas decimales PEN. La evaluación compara referencia semanal y Ridge;
+se conservan el baseline y sus advertencias cuando Ridge no mejora 10% en ambos
+bloques. Los bloques se utilizan en la decisión, no son evaluación independiente.
+
+La ejecución correcta se guarda en V5 con snapshot agregado, resultado, huella
+normalizada, autor y fecha. POST es cálculo/registro nuevo: repetirlo crea otro
+experimento, no modifica ventas ni stock. No hay reintento automático ni caché.
+El detalle guardado conserva stock al momento de generar, no el saldo presente.
+GET funciona aunque Python esté detenido. No existe PATCH/DELETE de experimentos.
+
+401 sin sesión, 403 VIEWER/CSRF, 404 UUID ausente, 400 fechas/horizonte inválidos,
+422 historial insuficiente y 503 `ANALYTICS_UNAVAILABLE` o `ANALYTICS_BUSY`.
+Timeout por defecto ocho segundos; hasta dos cálculos concurrentes en Java.
+Una falla no bloquea health ni las rutas de venta, que no dependen de Python.
+
+Python expone internamente GET /health y POST /v1/forecast con X-Analytics-Key.
+Esa clave nunca se entrega al navegador. No hay CORS global ni llamadas a API
+comercial. Solo se transfieren agregados; no usuarios, clientes, sesiones o BD.
+Método y fórmulas: [README de analítica](../services/analytics-python/README.md).

@@ -1,7 +1,59 @@
-# Validación · 0.3.0
+# Validación · 0.4.0
 
 Fecha: 22 de octubre de 2026. Se distingue ejecución en Linux/CI de arranque
 Windows o Compose local. No se activaron pagos, hosting ni APIs facturables.
+
+## Evidencia de F4
+
+[Run 39813560775](https://github.com/gpereyradev/nexus-ai/actions/runs/39813560775),
+commit `3080294`, aprobó los cuatro jobs: web, analytics, api y e2e.
+
+| Suite | Pruebas aprobadas |
+|---|---:|
+| Web | 10 |
+| Java unitarias/MVC | 17 |
+| Integración PostgreSQL | 46 |
+| Python | 10 |
+| Playwright con React/Java/Python/PostgreSQL reales | 3 |
+| Total | 86 |
+
+Los logs de navegador confirman venta/anulación, lector móvil con bloqueo de
+analítica, pronósticos a 7/14 días, contraste del total con el Panel, historial
+insuficiente sin curva y apertura del snapshot original sin recalcular. Los tres
+casos aprobaron en 14.3 segundos. No se interceptaron peticiones de la API.
+La revisión final posterior solo actualiza documentación y evidencia.
+
+Cobertura nueva:
+
+- Baseline perfecto conserva referencia semanal; una tendencia reproducible
+  permite elegir Ridge solo al mejorar ambos bloques.
+- Al perturbar únicamente objetivos de holdout, las predicciones previas de
+  selección/confirmación no cambian. Ajuste y futuro no se superponen.
+- Series escasas, largas secuencias previas de cero, auth interna, fechas
+  repetidas y validación sin reflejar datos recibidos.
+- Resumen decimal, alertas y cobertura/reposición con regla explícita; sin
+  inventar cobertura cuando no hay unidades vendidas.
+- Cliente HTTP Java: éxito tipado, respuestas erróneas/malformadas, 422, timeout,
+  URL no autorizada y servicio deshabilitado sin filtrar detalles upstream.
+- Agregados SQL y exclusión inmediata de anulaciones. Payload sin clientes,
+  cuentas, contraseñas o cookies. Roles/CSRF/anonimato aplicados en Java.
+- Experimentos con entrada/resultado y huella; misma fuente conserva huella;
+  snapshot sobrevive a cambios de nombre y rechaza borrado por trigger.
+- Con Python inaccesible, analítica devuelve 503 y una venta real confirma stock;
+  health responde 200 en la misma comprobación de integración PostgreSQL.
+
+Revisión visual nueva con Chromium en 1440, 1280, 768 y 390 px: formulario,
+resultado, estado insuficiente y apertura de snapshot; sin errores JavaScript ni
+desbordamiento del documento. La revisión visual usó una API Java interceptada
+con fixture calculado por Python real; se distingue del E2E completo en CI.
+TypeScript, pruebas web/Python y build local aprobados. Java compiló localmente;
+la resolución local de dependencias de Surefire falló, por lo que la evidencia
+de ejecución Java es la de GitHub Actions, no una ejecución local atribuida.
+
+No se afirma Windows, Compose completo o carga certificados a partir de estos resultados.
+`pip check` aprobó la coherencia de dependencias. FastAPI/TestClient emite una
+advertencia de deprecación para httpx 0.28.1; las 10 pruebas pasan y no se
+presenta esa advertencia como un error funcional.
 
 ## Evidencia de F2/F3
 
@@ -91,6 +143,6 @@ en esos casos y no se exportan trazas, vídeos ni capturas de sesiones.
 - Windows/Git Bash y build/ejecución del Compose completo de la aplicación.
 - Carga, auditoría exhaustiva, accesibilidad completa y otros navegadores.
 - Edición de roles, desactivación de usuarios y recuperación de contraseña.
-- Python/IA, importación, exportación y emisión tributaria sin implementar.
+- Chatbot/LLM, importación, exportación y emisión tributaria sin implementar.
 - El dataset ficticio usa fechas fijas, no sustituye ventas recientes. El botón
   «Ver período demo» permite consultarlo en cualquier fecha.

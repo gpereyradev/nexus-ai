@@ -3,17 +3,18 @@
 Plataforma de gestión empresarial con inteligencia artificial aplicada.
 Proyecto de portafolio de **Guillermo Pereyra · Ingeniería de Software con IA**.
 
-**Entrega 0.3.0: inventario, ventas y reportes.** Incluye acceso por roles,
-catálogos persistidos, ingresos y ajustes de stock, ventas atómicas y anulación
-con devolución única. El panel calcula indicadores desde PostgreSQL y permite
-filtrar por fechas de Lima. La IA se implementará en F4.
+**Entrega 0.4.0: analítica y pronósticos locales.** Además de inventario,
+ventas y reportes, incluye Python/FastAPI y un modelo Ridge de scikit-learn
+comparado con una referencia semanal. Muestra MAE, períodos, alertas estadísticas,
+reposición orientativa y resultados guardados con los agregados utilizados.
+No utiliza un chatbot ni APIs de IA comerciales.
 
 La evidencia y sus límites están en [docs/VALIDACION.md](docs/VALIDACION.md).
 La especificación original se conserva en
 [docs/NEXUS_AI_Especificacion_Maestra.pdf](docs/NEXUS_AI_Especificacion_Maestra.pdf).
 
 **Si ya tienes el proyecto:** sigue [docs/ACTUALIZAR.md](docs/ACTUALIZAR.md).
-No hace falta otro ZIP ni recrear la base. V4 conserva los catálogos existentes.
+No hace falta otro ZIP ni recrear la base. V5 conserva los catálogos y las operaciones existentes.
 
 ## Empezar por el frontend
 
@@ -131,15 +132,14 @@ sido ejecutado en GitHub.
 |---|---|
 | `apps/web` | React, TypeScript, CSS, contrato de conectividad y pruebas |
 | `services/api-java` | Spring Boot, seguridad por defecto y Flyway |
-| `services/analytics-python` | Reserva documentada para F4; sin servicio aún |
+| `services/analytics-python` | FastAPI, baseline/Ridge, evaluación temporal y reglas estadísticas |
 | `infra` | Compose local para Java y PostgreSQL |
 | `scripts` | Configuración local y arranque de Java desde la raíz |
 | `docs` | Plan, contrato, decisiones y validación |
 | `.github/workflows` | Pruebas y builds en push / pull request |
 
 React → `/api/v1` en Java → PostgreSQL. Vite reenvía `/api` al backend durante
-desarrollo. No se habilita CORS global. Python se incorporará detrás de Java
-cuando el MVP esté estable. No hay despliegue ni integración de servicios pagos.
+desarrollo. No se habilita CORS global. Python recibe agregados autorizados a través de Java. No hay despliegue ni integración de servicios pagos.
 
 El contrato se documenta en [docs/API.md](docs/API.md) y
 [docs/openapi.yaml](docs/openapi.yaml). Los listados de productos y clientes
@@ -210,7 +210,8 @@ aplicación con los mismos permisos y reglas que cualquier registro.
 
 ## Pruebas de navegador
 
-CI ejecuta Playwright contra React, el JAR real y PostgreSQL en una BD separada.
+CI ejecuta Playwright contra React, el JAR real, Python y PostgreSQL en una BD separada.
+Prepara también Python y sus dependencias como indica la sección de analítica.
 Para repetirlo localmente, crea un rol y BD exclusivos cuyo nombre termine en
 `_e2e`, exporta `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` y ejecuta:
 
@@ -225,10 +226,85 @@ terminen en `_e2e`. No reutiliza servidores existentes. Las contraseñas de fixt
 son exclusivas de ese entorno efímero. No lee tu `.env` ni tus cuentas locales.
 No activa capturas, vídeos o trazas con credenciales.
 
-## Próximo módulo
+## Activar análisis y pronósticos
 
-**F4: análisis y pronósticos con Python.** Se abordará con baseline, evaluación
-MAE y tratamiento de fallos del servicio. Consulta [docs/ROADMAP.md](docs/ROADMAP.md).
+La operación principal funciona aunque Python esté detenido. ADMIN, MANAGER y
+ANALYST pueden generar/consultar análisis; VIEWER conserva consulta de gestión
+y reportes, sin acceso a analítica. Los análisis no cambian ventas ni stock.
+
+### Sin Docker
+
+Requiere Python 3.12. Desde la raíz, en Windows/Git Bash:
+
+```bash
+py -3.12 -m venv services/analytics-python/.venv
+services/analytics-python/.venv/Scripts/python.exe -m pip install -r services/analytics-python/requirements.txt
+npm run setup
+npm run analytics
+```
+
+En Linux/macOS cambia las dos primeras líneas por:
+
+```bash
+python3.12 -m venv services/analytics-python/.venv
+services/analytics-python/.venv/bin/python -m pip install -r services/analytics-python/requirements.txt
+```
+
+Mantén `npm run api` y `npm run dev` en otras dos terminales. El lanzador elige
+el Python del entorno `.venv`; puedes indicar otro ejecutable mediante
+`ANALYTICS_PYTHON`. Usa `npm run setup` para añadir las variables nuevas y una
+clave interna aleatoria. No publiques esa clave; no se envía al navegador.
+`ANALYTICS_URL` por defecto apunta a `http://127.0.0.1:8001` y el tiempo máximo
+por solicitud es 8 segundos. No se permite usar una URL remota arbitraria.
+
+### Con Compose
+
+Después de configurar `.env`:
+
+```bash
+docker compose --env-file .env -f infra/compose.yaml --profile analytics up -d --build
+```
+
+Python queda en la red interna como `analytics:8001`, sin puerto público. El
+perfil es opcional: sin él la gestión sigue funcionando y Análisis muestra un
+error recuperable. Esta receta no se ha ejecutado localmente con Docker.
+
+### Recorrido
+
+1. Abre Análisis y usa «Usar fechas demo» si cargaste el dataset opcional.
+2. Genera 7 o 14 días. El horizonte empieza después del cierre elegido,
+   incluso si elegiste un período antiguo: no se desplaza a la fecha actual.
+3. Revisa referencia/modelo, MAE, períodos y advertencias. Se necesitan al menos
+   84 días desde la primera venta y 28 días con importe de ventas positivo dentro del período.
+4. Consulta alertas y reposición. Son reglas explícitas, sin órdenes automáticas
+   ni información sobre demanda perdida o plazos de proveedores.
+5. Abre Análisis guardados. Cada ejecución correcta conserva entrada agregada,
+   resultado, huella SHA-256, autor y fecha; no se recalcula al abrirla.
+
+La elección exige que Ridge reduzca el MAE al menos 10% en dos bloques
+cronológicos de 14 días; en caso contrario se conserva la referencia semanal.
+Ambos bloques participan en la decisión, por lo que no se anuncian como una
+evaluación independiente posterior a seleccionar el método. No se inventan
+intervalos de confianza ni curvas cuando falta historial.
+
+Pruebas Python:
+
+```bash
+services/analytics-python/.venv/Scripts/python.exe -m pytest -q services/analytics-python/tests
+```
+
+En Linux/macOS usa `.venv/bin/python`. Las versiones están fijadas en
+`requirements.txt`, incluidas las herramientas de pruebas. La suite E2E también
+requiere esas dependencias Python; inicia el servicio con una clave efímera
+propia sin leer `.env`.
+
+Detalles: [método y límites](services/analytics-python/README.md),
+[ADR-004](docs/ADR-004-local-analytics.md) y [validación](docs/VALIDACION.md).
+
+## Siguiente fase
+
+F5: completar administración de usuarios, exportaciones y revisión de carga,
+accesibilidad y documentación del caso de estudio. Ver [ROADMAP](docs/ROADMAP.md).
 
 ## Notas de seguridad y costo
 

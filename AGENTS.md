@@ -5,11 +5,13 @@
 - Stack: React + TypeScript, Java/Spring Boot y PostgreSQL. Python desde F4.
 - Presupuesto externo S/0. No activar pagos, pruebas facturables ni hosting
   que requiera tarjeta. No realizar acciones externas que no solicite el usuario.
-- Entrega actual: 0.3.0. F0 tiene integración Java/PostgreSQL aprobada en CI.
+- Entrega actual: 0.4.0. F0 tiene integración Java/PostgreSQL aprobada en CI.
 - F1 incorpora login/logout con sesión y CSRF, cuatro roles, catálogos y alta de usuarios.
 - F2/F3 incorporan stock por ledger, ventas atómicas, anulación única y reportes SQL.
-- Próximo módulo F4: Python/FastAPI, baseline y evaluación; todavía no hay IA.
-- V1–V4 ya fueron aplicadas en CI: son inmutables. Para cambios de esquema agrega V5.
+- F4: FastAPI, Ridge y referencia semanal; MAE temporal, anomalías, reposición y snapshots.
+- No hay chatbot, LLM ni servicios de IA comerciales; no presentar reglas estadísticas como aprendizaje automático.
+- Próximos pendientes: usuarios, exportaciones, carga y accesibilidad.
+- V1–V5 ya fueron aplicadas en CI: son inmutables. Para cambios de esquema agrega V6.
 - Playwright requiere una BD aislada cuyo nombre termine en _e2e; nunca reutilices la de trabajo.
 - Consulta la evidencia y limitaciones actuales en docs/VALIDACION.md; no confundas CI Linux con arranque Windows verificado.
 - Trabaja sobre el código actual; conserva cambios del usuario y evita
@@ -24,3 +26,11 @@
 - Para cambios frontend: npm run typecheck, npm test, npm run build.
 - Para Java: mvn -B -f services/api-java/pom.xml test.
 - Para integración: verify -Pintegration contra una BD aislada de pruebas.
+
+- Analítica solo ADMIN/MANAGER/ANALYST, por Java; Python nunca accede a PostgreSQL.
+- No enviar clientes, usuarios, sesiones o credenciales en el payload de analítica.
+- Python 3.12; requisitos fijados en services/analytics-python/requirements.txt.
+- Para Python: python -m pytest -q services/analytics-python/tests con sus dependencias.
+- Los dos bloques de evaluación participan en selección: no afirmar MAE fuera de muestra independiente de la decisión final.
+- Cambios al método, reglas o dependencias numéricas requieren revisar/bump methodVersion (actual 1.0.0).
+- Los snapshots de V5 son inmutables y guardan agregados de entrada, resultado y huella normalizada sin stockAsOf en el hash.
